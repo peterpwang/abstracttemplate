@@ -10,11 +10,11 @@ number_htmls = 0
 debug = 0;
 
 
-def read_original_data(original_data_dir, cvs_data_path):
+def read_original_data(original_data_dir, text_data_path):
 
     global number_htmls, debug
 
-    f = open(cvs_data_path, 'w')
+    f = open(text_data_path, 'w')
 
     for subdir, dirs, files in os.walk(original_data_dir):
         for filename in files:
@@ -25,7 +25,7 @@ def read_original_data(original_data_dir, cvs_data_path):
                 f.write(text);
                 f.write("\n");
 
-                number_htmls =number_htmls + 1
+                number_htmls = number_htmls + 1
                 if debug == 1 and number_htmls%1000 == 0:
                     print(".", end = '', flush=True)
     f.close()
@@ -54,8 +54,8 @@ if __name__ == "__main__":
                         help='Debug?') 
     parser.add_argument('--input', default='./data/origin/', metavar='N',
                         help='Root path of HTML data files') 
-    parser.add_argument('--output', default='./data/text/data.cvs', metavar='N',
-                        help='Output CVS data file path') 
+    parser.add_argument('--output', default='./data/text/data.txt', metavar='N',
+                        help='Output text data file path') 
     args = parser.parse_args()
 
     debug = args.debug
