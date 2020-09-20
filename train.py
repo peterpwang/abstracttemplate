@@ -5,6 +5,7 @@ import geffnet
 
 # Helper libraries
 import os
+import time
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,22 +31,27 @@ class Trainer():
         self.lr = 20
         self.eval_batch_size = 10
         self.bptt = 35
+        self.emsize = 200
+        self.nhid = 200
+        self.nlayers = 2
+        self.dropout = 0.2
+        self.tied = True
         self.model_type = "LSTM"
         self.clip = 0.25
         self.log_interval = 200
-        self.data_path = "./data/text/text.cvs"
+        self.data_path = "./data/text/"
         self.save_path = "./data/result/save.mdl"
 
         # Set the random seed manually for reproducibility.
         torch.manual_seed(self.seed)
 
-    # Load dataset and split into training and test sets.
+    # Load datasekt and split into training and test sets.
     def load_dataset(self):
         self.corpus = data.Corpus(self.data_path)
 
-        train_data = batchify(self.corpus.train, self.batch_size)
-        val_data = batchify(self.corpus.valid, self.eval_batch_size)
-        test_data = batchify(self.corpus.test, self.eval_batch_size)
+        train_data = self.batchify(self.corpus.train, self.batch_size)
+        val_data = self.batchify(self.corpus.valid, self.eval_batch_size)
+        test_data = self.batchify(self.corpus.test, self.eval_batch_size)
 
         return train_data, val_data, test_data;
 
@@ -64,7 +70,7 @@ class Trainer():
         if isinstance(h, torch.Tensor):
             return h.detach()
         else:
-            return tuple(repackage_hidden(v) for v in h)
+            return tuple(self.repackage_hidden(v) for v in h)
 
     def get_batch(self, source, i):
         seq_len = min(self.bptt, len(source) - 1 - i)
@@ -74,11 +80,11 @@ class Trainer():
 
     def create_model(self, device):
         ntokens = len(self.corpus.dictionary)
-        model = model.RNNModel(self.model_type, ntokens, self.emsize, self.nhid, self.nlayers, self.dropout, self.tied).to(device)
+        net = model.RNNModel(self.model_type, ntokens, self.emsize, self.nhid, self.nlayers, self.dropout, self.tied).to(device)
 
-        criterion = nn.NLLLoss()
+        self.criterion = nn.NLLLoss()
 
-        return model
+        return net
 
     def train(self, model, train_data):
         # Turn on training mode which enables dropout.
@@ -93,9 +99,9 @@ class Trainer():
             # Starting each batch, we detach the hidden state from how it was previously produced.
             # If we didn't, the model would try backpropagating all the way to start of the dataset.
             model.zero_grad()
-            hidden = repackage_hidden(hidden)
+            hidden = self.repackage_hidden(hidden)
             output, hidden = model(data, hidden)
-            loss = criterion(output, targets)
+            loss = self.criterion(output, targets)
             loss.backward()
 
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
@@ -126,8 +132,8 @@ class Trainer():
             for i in range(0, data_source.size(0) - 1, self.bptt):
                 data, targets = get_batch(data_source, i)
                 output, hidden = model(data, hidden)
-                hidden = repackage_hidden(hidden)
-                total_loss += len(data) * criterion(output, targets).item()
+                hidden = self.repackage_hidden(hidden)
+                total_loss += len(data) * self.criterion(output, targets).item()
         return total_loss / (len(data_source) - 1)
     
     def run(self):

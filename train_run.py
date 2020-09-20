@@ -13,5 +13,5 @@ if __name__ == "__main__":
                         help='batch size (default 128)')
     args = parser.parse_args()
 
-    model = model.Trainer(args)
+    model = train.Trainer(args)
     model.run()
