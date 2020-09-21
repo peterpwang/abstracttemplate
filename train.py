@@ -6,6 +6,7 @@ import geffnet
 # Helper libraries
 import os
 import time
+import math
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,7 +41,7 @@ class Trainer():
         self.clip = 0.25
         self.log_interval = 200
         self.data_path = "./data/text/"
-        self.save_path = "./data/result/save.mdl"
+        self.save_path = "./data/results/save.mdl"
 
         # Set the random seed manually for reproducibility.
         torch.manual_seed(self.seed)
@@ -114,9 +115,9 @@ class Trainer():
             if batch % self.log_interval == 0 and batch > 0:
                 cur_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
-                print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
+                print('| {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
-                    epoch, batch, len(train_data) // self.bptt, self.lr,
+                    batch, len(train_data) // self.bptt, self.lr,
                     elapsed * 1000 / self.log_interval, cur_loss, math.exp(cur_loss)))
                 total_loss = 0
                 start_time = time.time()
@@ -130,7 +131,7 @@ class Trainer():
 
         with torch.no_grad():
             for i in range(0, data_source.size(0) - 1, self.bptt):
-                data, targets = get_batch(data_source, i)
+                data, targets = self.get_batch(data_source, i)
                 output, hidden = model(data, hidden)
                 hidden = self.repackage_hidden(hidden)
                 total_loss += len(data) * self.criterion(output, targets).item()
