@@ -39,9 +39,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', default=0, type=int, metavar='N',
                         help='Debug?') 
-    parser.add_argument('--input', default='./data/text/data.cvs', metavar='N',
+    parser.add_argument('--input', default='./data/text/data.csv', metavar='N',
                         help='CVS data file path') 
-    parser.add_argument('--output', default='./data/text/tfidf.cvs', metavar='N',
+    parser.add_argument('--output', default='./data/text/tfidf.csv', metavar='N',
                         help='TFIDF data file path') 
     args = parser.parse_args()
 
