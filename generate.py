@@ -22,12 +22,13 @@ class Generator():
     
     def __init__(self, args):
 
+        self.data_path = args.data_path
+        self.model_path = args.model_path
+
         self.corpus = None
 
         self.seed = 1111
         self.log_interval = 200
-        self.data_path = "./data/text/"
-        self.save_path = "./data/results/save.mdl"
         self.generated_path = "./data/results/generated.txt"
         self.words = 100
         self.temperature = 1.0
@@ -42,7 +43,7 @@ class Generator():
         print("Torch:", torch.__version__, "(CPU+GPU)" if  torch.cuda.is_available() else "(CPU)")
         torch.cuda.set_device(0)
 
-        with open(self.save_path, 'rb') as f:
+        with open(self.model_path, 'rb') as f:
             model = torch.load(f).to(device)
         model.eval()
 
