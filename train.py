@@ -23,6 +23,7 @@ class Trainer():
     def __init__(self, args):
         self.epochs = args.epochs
         self.batch_size = args.batch_size
+        self.data_path = args.data_path
 
         self.prepare_batch = None
         self.corpus = None
@@ -39,7 +40,6 @@ class Trainer():
         self.model_type = "LSTM"
         self.clip = 0.25
         self.log_interval = 200
-        self.data_path = "./data/text/"
         self.save_path = "./data/results/save.mdl"
 
         # Set the random seed manually for reproducibility.
