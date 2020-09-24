@@ -11,9 +11,9 @@ tfidf.py: Calculate TF-IDF from text file
 
 stanza.py: Create UPOS from text file  
 
-train_run.sh, train_run.py, train.py: Train on text files and save the model.
+train.sh, train.py: Train on text files and save the model.
 
-generate_run.sh, generate_run.py, generate.py: Generate text basing on the saved model.
+generate.sh, generate.py: Generate text basing on the saved model.
 
 model.py: Model definitions.
 
