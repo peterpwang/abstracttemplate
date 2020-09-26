@@ -30,7 +30,7 @@ class Generator():
 
         self.seed = 1111
         self.log_interval = 200
-        self.generated_path = "./data/results/generated.txt"
+        self.generated_path = "./data/9/generated.txt"
         self.words = 100
         self.temperature = 1.0
 
@@ -75,10 +75,10 @@ class Generator():
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', default="./data/text/", type=str, metavar='N',
-                        help='data path (default ./data/text/)')
-    parser.add_argument('--model_path', default="./data/results/save.mdl", type=str, metavar='N',
-                        help='model path (default ./data/results/save.mdl)')
+    parser.add_argument('--data_path', default="./data/3/", type=str, metavar='N',
+                        help='data path (default ./data/3/)')
+    parser.add_argument('--model_path', default="./data/9/save.mdl", type=str, metavar='N',
+                        help='model path (default ./data/9/save.mdl)')
     args = parser.parse_args()
 
     net = Generator(args)

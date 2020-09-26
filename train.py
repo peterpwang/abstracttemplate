@@ -41,7 +41,7 @@ class Trainer():
         self.model_type = "LSTM"
         self.clip = 0.25
         self.log_interval = 200
-        self.save_path = "./data/results/save.mdl"
+        self.save_path = "./data/9/save.mdl"
 
         # Set the random seed manually for reproducibility.
         torch.manual_seed(self.seed)
@@ -145,8 +145,8 @@ class Trainer():
         torch.cuda.set_device(0)
 
         # Create directories
-        if not os.path.isdir('data/results'):
-            os.mkdir('data/results')
+        if not os.path.isdir('data/9'):
+            os.mkdir('data/9')
 
         # Load dataset
         train_data, val_data, test_data = self.load_dataset()
@@ -198,8 +198,8 @@ if __name__ == "__main__":
                         help='number of total epochs to run (default 1)')
     parser.add_argument('--batch_size', default=128, type=int, metavar='N',
                         help='batch size (default 128)')
-    parser.add_argument('--data_path', default="./data/text/", type=str, metavar='N',
-                        help='data path (default ./data/text/)')
+    parser.add_argument('--data_path', default="./data/2/", type=str, metavar='N',
+                        help='data path (default ./data/2/)')
     args = parser.parse_args()
 
     net = Trainer(args)

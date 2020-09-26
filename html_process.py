@@ -33,6 +33,13 @@ def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
                 if debug == 1 and number_htmls%1000 == 0:
                     print(".", end = '', flush=True)
 
+    # Write text file
+    f = open(text_data_path + "/data.txt", 'w')
+    for line in lines:
+        f.write(line)
+        f.write("\n");
+    f.close()
+
     # Create TFIDF text
     lines = create_tfidf(lines, tfidf_data_path)
 
@@ -43,17 +50,17 @@ def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
     number_validation = int(number_htmls * 0.2)
     number_test = number_htmls - number_train - number_validation
 
-    f = open(text_data_path + "/train.txt", 'w')
+    f = open(tfidf_data_path + "/train.txt", 'w')
     for i in range(0, number_train):
         f.write(lines[i] + "\n");
     f.close()
 
-    f = open(text_data_path + "/validation.txt", 'w')
+    f = open(tfidf_data_path + "/validation.txt", 'w')
     for i in range(number_train, number_train + number_validation):
         f.write(lines[i] + "\n");
     f.close()
 
-    f = open(text_data_path + "/test.txt", 'w')
+    f = open(tfidf_data_path + "/test.txt", 'w')
     for i in range(number_train + number_validation, number_htmls):
         f.write(lines[i] + "\n");
     f.close()
