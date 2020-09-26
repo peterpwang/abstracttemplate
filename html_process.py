@@ -6,18 +6,22 @@ import sys
 import os
 import random
 
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 # public variables
 number_htmls = 0
 debug = 0;
 
 
-def read_original_data(original_data_dir, text_data_path):
+def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
 
     global number_htmls, debug
 
     lines = []
 
-    for subdir, dirs, files in os.walk(original_data_dir):
+    # Read text from html files and save into a list.
+    for subdir, dirs, files in os.walk(html_data_dir):
         for filename in files:
             filepath = subdir + os.sep + filename
 
@@ -29,6 +33,10 @@ def read_original_data(original_data_dir, text_data_path):
                 if debug == 1 and number_htmls%1000 == 0:
                     print(".", end = '', flush=True)
 
+    # Create TFIDF text
+    lines = create_tfidf(lines, tfidf_data_path)
+
+    # Split and save text into text files
     random.shuffle(lines)
 
     number_train = int(number_htmls * 0.7)
@@ -53,6 +61,53 @@ def read_original_data(original_data_dir, text_data_path):
     print(str(number_htmls) +  " (" + str(number_train) + "/" + str(number_validation) + "/" + str(number_test) + ") converted.", flush=True)
 
 
+def create_tfidf(lines, tfidf_text_path):
+    # Calculate TFIDF
+    vectorizer = TfidfVectorizer(stop_words='english', 
+                                 #min_df=5, max_df=.5, 
+                                 ngram_range=(1,1))
+    tfidf = vectorizer.fit_transform(lines)
+    #print(tfidf)
+
+    # Get features and index
+    features = vectorizer.get_feature_names()
+    indices = np.argsort(vectorizer.idf_)[::-1]
+
+    lines_tfidf = []
+    f = open(tfidf_text_path + "/data_tfidf.txt", 'w')
+
+    # Replace words with TFIDF < 0.05 with RRRR
+    doc = 0
+    for line in lines:
+        feature_index = tfidf[doc,:].nonzero()[1]
+        tfidf_scores = dict(zip([features[x] for x in feature_index], [tfidf[doc, x] for x in feature_index]))
+
+        text = lines[doc]
+        line = ""
+
+        for w in text.split():
+            score = 0.0
+            if w in tfidf_scores and tfidf_scores[w] > 0.05:
+                f.write("RRRR ");
+                line = line + "RRRR "
+            else:
+                f.write(w + " ");
+                line = line + w + " "
+
+        f.write("\n");
+        lines_tfidf.append(line)
+
+        doc = doc + 1
+
+    f.close()
+
+    # Get the top 20 features
+    #top_n = 20
+    #top_features = [features[i] for i in indices[:top_n]]
+
+    return lines_tfidf
+
+
 def convert_html_to_text(html_path):
 
     f = open(html_path, 'r')
@@ -72,15 +127,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', default=0, type=int, metavar='N',
                         help='Debug?') 
-    parser.add_argument('--input', default='./data/origin/', metavar='N',
+    parser.add_argument('--input_path', default='./data/origin/', metavar='N',
                         help='Root path of HTML data files') 
-    parser.add_argument('--output', default='./data/text/', metavar='N',
+    parser.add_argument('--text_path', default='./data/text/', metavar='N',
                         help='Output path of text data') 
+    parser.add_argument('--tfidf_path', default='./data/text_tfidf/', metavar='N',
+                        help='Output path of TFIDF text data') 
     args = parser.parse_args()
 
     debug = args.debug
 
-    read_original_data(args.input, args.output)
+    read_original_data(args.input_path, args.text_path, args.tfidf_path)
 
 
 #stanza.download('en')       # This downloads the English models for the neural pipeline
