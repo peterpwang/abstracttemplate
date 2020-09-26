@@ -127,11 +127,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', default=0, type=int, metavar='N',
                         help='Debug?') 
-    parser.add_argument('--input_path', default='./data/origin/', metavar='N',
+    parser.add_argument('--input_path', default='./data/0/', metavar='N',
                         help='Root path of HTML data files') 
-    parser.add_argument('--text_path', default='./data/text/', metavar='N',
+    parser.add_argument('--text_path', default='./data/1/', metavar='N',
                         help='Output path of text data') 
-    parser.add_argument('--tfidf_path', default='./data/text_tfidf/', metavar='N',
+    parser.add_argument('--tfidf_path', default='./data/2/', metavar='N',
                         help='Output path of TFIDF text data') 
     args = parser.parse_args()
 
