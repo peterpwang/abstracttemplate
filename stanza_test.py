@@ -26,10 +26,11 @@ def create_upos(corpus):
     doc = 0
     while doc < 5:
         text = corpus[doc]
-        upos = nlp(text)
+        entry = nlp(text)
 
-        print(upos)
-        print(upos.entities)
+        for i, sent in enumerate(entry.sentences):
+            print(*[f'{word.text}[{word.upos}]' for word in sent.words], sep=' ')
+        #print(upos.entities)
         print('\n')
         doc = doc + 1
 
