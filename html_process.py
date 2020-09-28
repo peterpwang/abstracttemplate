@@ -10,14 +10,14 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # public variables
-number_htmls = 0
 debug = 0;
 
 
 def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
 
-    global number_htmls, debug
+    global debug
 
+    number_htmls = 0
     lines = []
 
     # Read text from html files and save into a list.
@@ -40,32 +40,41 @@ def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
         f.write("\n");
     f.close()
 
-    # Create TFIDF text
-    lines = create_tfidf(lines, tfidf_data_path)
-
     # Split and save text into text files
+    text_split(lines, text_data_path)
+
+    # Create TFIDF text
+    # Split and save text into text files
+    lines = create_tfidf(lines, tfidf_data_path)
+    text_split(lines, tfidf_data_path)
+
+    print(str(number_htmls) +  " converted.", flush=True)
+
+
+def text_split(lines, text_path):
+    # Split and save text into text files
+    number_lines = len(lines)
+
     random.shuffle(lines)
 
-    number_train = int(number_htmls * 0.7)
-    number_validation = int(number_htmls * 0.2)
-    number_test = number_htmls - number_train - number_validation
+    number_train = int(number_lines * 0.7)
+    number_validation = int(number_lines * 0.2)
+    number_test = number_lines - number_train - number_validation
 
-    f = open(tfidf_data_path + "/train.txt", 'w')
+    f = open(text_path + "/train.txt", 'w')
     for i in range(0, number_train):
         f.write(lines[i] + "\n");
     f.close()
 
-    f = open(tfidf_data_path + "/validation.txt", 'w')
+    f = open(text_path + "/validation.txt", 'w')
     for i in range(number_train, number_train + number_validation):
         f.write(lines[i] + "\n");
     f.close()
 
-    f = open(tfidf_data_path + "/test.txt", 'w')
-    for i in range(number_train + number_validation, number_htmls):
+    f = open(text_path + "/test.txt", 'w')
+    for i in range(number_train + number_validation, number_lines):
         f.write(lines[i] + "\n");
     f.close()
-
-    print(str(number_htmls) +  " (" + str(number_train) + "/" + str(number_validation) + "/" + str(number_test) + ") converted.", flush=True)
 
 
 def create_tfidf(lines, tfidf_text_path):
