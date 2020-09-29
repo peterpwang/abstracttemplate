@@ -1,21 +1,10 @@
-import stanza
-
 import csv
 import argparse
 import sys
 import os
+import stanza
 
-# public variables
-debug = 0;
-
-
-def read_text(text_path):
-    data = []
-    with open(text_path, newline='') as csvfile:
-        csv_reader = csv.reader(csvfile, delimiter='\t')
-        for row in csv_reader:
-            data.append(row[0])
-    return data
+from util import read_text
 
 
 def create_upos(corpus):
@@ -38,15 +27,9 @@ def create_upos(corpus):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', default=0, type=int, metavar='N',
-                        help='Debug?') 
-    parser.add_argument('--input', default='./data/text/data.csv', metavar='N',
-                        help='CVS data file path') 
-    parser.add_argument('--output', default='./data/text/tfidf.csv', metavar='N',
-                        help='TFIDF data file path') 
+    parser.add_argument('--input', default='./data/1/data.txt', metavar='N',
+                        help='Text data file path') 
     args = parser.parse_args()
-
-    debug = args.debug
 
     corpus = read_text(args.input)
     create_upos(corpus)
