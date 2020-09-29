@@ -1,5 +1,4 @@
 #from bs4 import BeautifulSoup
-#import stanza
 
 import argparse
 import sys
@@ -8,17 +7,45 @@ import random
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+import stanza
+
+from util import read_text
 
 # public variables
-debug = 0;
-
+debug = 0
+skip_extraction = 1
+skip_tfidf = 1
 
 def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
+    global skip_extraction
+    global skip_tfidf
 
+    if skip_extraction == 0:
+        # Read text from html files and save into a list.
+        lines = extract_text(html_data_dir, text_data_path)
+        number_htmls = len(lines)
+        print(str(number_htmls) +  " extracted.", flush=True)
+
+        # Split and save text into text files
+        text_split(lines, text_data_path)
+        print("Datasets created.", flush=True)
+    else:
+        lines = read_text(text_data_path + "/data.txt")
+        number_htmls = len(lines)
+        print(str(number_htmls) +  " read from dataset.", flush=True)
+
+    # Create TFIDF text and split and save text into text files
+    if skip_tfidf == 0:
+        lines = create_tfidf(lines, tfidf_data_path)
+        text_split(lines, tfidf_data_path)
+        print(str(number_htmls) +  " converted.", flush=True)
+
+
+def extract_text(html_data_dir, text_data_path):
     global debug
 
-    number_htmls = 0
     lines = []
+    number_htmls = 0
 
     # Read text from html files and save into a list.
     for subdir, dirs, files in os.walk(html_data_dir):
@@ -40,15 +67,7 @@ def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
         f.write("\n");
     f.close()
 
-    # Split and save text into text files
-    text_split(lines, text_data_path)
-
-    # Create TFIDF text
-    # Split and save text into text files
-    lines = create_tfidf(lines, tfidf_data_path)
-    text_split(lines, tfidf_data_path)
-
-    print(str(number_htmls) +  " converted.", flush=True)
+    return lines
 
 
 def text_split(lines, text_path):
@@ -147,11 +166,19 @@ if __name__ == "__main__":
                         help='Root path of HTML data files') 
     parser.add_argument('--text_path', default='./data/1/', metavar='N',
                         help='Output path of text data') 
-    parser.add_argument('--tfidf_path', default='./data/2/', metavar='N',
-                        help='Output path of TFIDF text data') 
+    parser.add_argument('--ner_path', default='./data/2/', metavar='N',
+                        help='Output path of NER tagged text data') 
+    parser.add_argument('--tfidf_path', default='./data/3/', metavar='N',
+                        help='Output path of TFIDF tagged text data') 
+    parser.add_argument('--skip_extraction', default=1, type=int, metavar='N',
+                        help='Skip HTML extraction?') 
+    parser.add_argument('--skip_tfidf', default=1, type=int, metavar='N',
+                        help='Skip TF/IDF tagging?') 
     args = parser.parse_args()
 
     debug = args.debug
+    skip_extraction = args.skip_extraction
+    skip_tfidf = args.skip_tfidf
 
     read_original_data(args.input_path, args.text_path, args.tfidf_path)
 
