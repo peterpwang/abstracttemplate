@@ -14,31 +14,45 @@ from util import read_text
 # public variables
 debug = 0
 skip_extraction = 1
+skip_upos = 1
 skip_tfidf = 1
 
-def read_original_data(html_data_dir, text_data_path, tfidf_data_path):
+def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir):
     global skip_extraction
+    global skip_upos
     global skip_tfidf
 
     if skip_extraction == 0:
         # Read text from html files and save into a list.
-        lines = extract_text(html_data_dir, text_data_path)
+        print("Extracting...", flush=True)
+        lines = extract_text(html_data_dir, text_data_dir)
         number_htmls = len(lines)
         print(str(number_htmls) +  " extracted.", flush=True)
 
         # Split and save text into text files
-        text_split(lines, text_data_path)
+        text_split(lines, text_data_dir)
         print("Datasets created.", flush=True)
     else:
-        lines = read_text(text_data_path + "/data.txt")
+        print("Reading...", flush=True)
+        lines = read_text(text_data_dir + "/data.txt")
         number_htmls = len(lines)
         print(str(number_htmls) +  " read from dataset.", flush=True)
 
+    if skip_upos == 0:
+        print("Tagging...", flush=True)
+        lines = create_upos(lines, upos_data_dir + "/data_upos.txt", upos_data_dir + "/data_upos.html")
+        print("UPOS tags created.", flush=True)
+    else:
+        print("UPOS tags reading...", flush=True)
+        lines = read_text(upos_data_dir + "/data_upos.txt")
+        print(str(number_htmls) +  " UPOS tagged read from dataset.", flush=True)
+
     # Create TFIDF text and split and save text into text files
     if skip_tfidf == 0:
-        lines = create_tfidf(lines, tfidf_data_path)
-        text_split(lines, tfidf_data_path)
-        print(str(number_htmls) +  " converted.", flush=True)
+        print("TFIDF calculating...", flush=True)
+        lines = create_tfidf(lines, tfidf_data_dir)
+        text_split(lines, tfidf_data_dir)
+        print(str(number_htmls) +  " TFIDF calculated.", flush=True)
 
 
 def extract_text(html_data_dir, text_data_path):
@@ -94,6 +108,80 @@ def text_split(lines, text_path):
     for i in range(number_train + number_validation, number_lines):
         f.write(lines[i] + "\n");
     f.close()
+
+
+def create_upos(lines, upos_text_file, upos_html_file):
+    global debug
+
+    #stanza.download('en')
+    nlp = stanza.Pipeline(lang='en', processors='tokenize,ner')
+
+    docs = []
+    i = 0
+    for line in lines:
+        doc = nlp(line)
+        docs.append(doc)
+        i = i + 1
+        if debug == 1 and i%1000 == 0:
+            print(".", end = '', flush=True)
+
+    # Output 5 documents into sample HTML file
+    f = open(upos_html_file, 'w')
+    f.write("<!DOCTYPE html>\n")
+    f.write("<html lang=\"en\">\n")
+    f.write("  <head>\n")
+    f.write("    <meta charset=\"utf-8\">\n")
+    f.write("    <style>\n")
+    f.write("      .entity { color: green; }\n")
+    f.write("    </style>\n")
+    f.write("  </head>\n")
+    f.write("  <body>\n")
+
+    i = 0
+    for doc in docs:
+        if i >= 5:
+            break
+
+        for sentence in doc.sentences:
+            for token in sentence.tokens:
+                if token.ner != "O":
+                    f.write('<span class="entity">' + token.text + '</span> ')
+                else:
+                    f.write(token.text + ' ')
+
+        f.write("<br>\n");
+        i = i + 1
+
+    f.write("  </body>\n")
+    f.write("</html>\n")
+    f.write("\n");
+    f.close()
+
+    # Export documents into plain text
+    f = open(upos_text_file, 'w')
+    for doc in docs:
+        for sentence in doc.sentences:
+            for token in sentence.tokens:
+                if token.ner != "O":
+                    f.write('NNNN ')
+                else:
+                    f.write(token.text + ' ')
+        f.write("\n");
+    f.close()
+
+    # return in list
+    ner_list = []
+    for doc in docs:
+        s = ""
+        for sentence in doc.sentences:
+            for token in sentence.tokens:
+                if token.ner != "O":
+                    s += 'NNNN '
+                else:
+                    s += token.text + ' '
+        ner_list.append(s)
+
+    return ner_list
 
 
 def create_tfidf(lines, tfidf_text_path):
@@ -166,26 +254,22 @@ if __name__ == "__main__":
                         help='Root path of HTML data files') 
     parser.add_argument('--text_path', default='./data/1/', metavar='N',
                         help='Output path of text data') 
-    parser.add_argument('--ner_path', default='./data/2/', metavar='N',
-                        help='Output path of NER tagged text data') 
+    parser.add_argument('--upos_path', default='./data/2/', metavar='N',
+                        help='Output path of UPOS tagged text data') 
     parser.add_argument('--tfidf_path', default='./data/3/', metavar='N',
                         help='Output path of TFIDF tagged text data') 
     parser.add_argument('--skip_extraction', default=1, type=int, metavar='N',
                         help='Skip HTML extraction?') 
+    parser.add_argument('--skip_upos', default=1, type=int, metavar='N',
+                        help='Skip UPOS creation?') 
     parser.add_argument('--skip_tfidf', default=1, type=int, metavar='N',
                         help='Skip TF/IDF tagging?') 
     args = parser.parse_args()
 
     debug = args.debug
     skip_extraction = args.skip_extraction
+    skip_upos = args.skip_upos
     skip_tfidf = args.skip_tfidf
 
-    read_original_data(args.input_path, args.text_path, args.tfidf_path)
-
-
-#stanza.download('en')       # This downloads the English models for the neural pipeline
-#nlp = stanza.Pipeline('en') # This sets up a default neural pipeline in English
-#doc = nlp(text)
-#doc.sentences[0].print_tokens()
-#doc.sentences[0].print_words()
+    read_original_data(args.input_path, args.text_path, args.upos_path, args.tfidf_path)
 
