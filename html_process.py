@@ -16,11 +16,13 @@ debug = 0
 skip_extraction = 1
 skip_upos = 1
 skip_tfidf = 1
+skip_first_sentence = 1
 
-def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir):
+def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir, first_sentence_dir):
     global skip_extraction
     global skip_upos
     global skip_tfidf
+    global skip_first_sentense
 
     if skip_extraction == 0:
         # Read text from html files and save into a list.
@@ -51,8 +53,23 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
     if skip_tfidf == 0:
         print("TFIDF calculating...", flush=True)
         lines = create_tfidf(lines, tfidf_data_dir)
+
+        # Split and save text into text files
         text_split(lines, tfidf_data_dir)
         print(str(number_htmls) +  " TFIDF calculated.", flush=True)
+    else:
+        print("TFIDF reading...", flush=True)
+        lines = read_text(tfidf_data_dir + "/data_tfidf.txt")
+        print(str(number_htmls) +  " TFIDF read from dataset.", flush=True)
+
+    # Create first sentence text and split and save text into text files
+    if skip_first_sentence == 0:
+        print("Extracting first sentence...", flush=True)
+        lines = create_first_sentence(lines, first_sentence_dir)
+
+        # Split and save text into text files
+        text_split(lines, first_sentence_dir)
+        print(str(number_htmls) +  " first sentence text extracted.", flush=True)
 
 
 def extract_text(html_data_dir, text_data_path):
@@ -178,11 +195,15 @@ def create_upos(lines, upos_text_file, upos_html_file):
     for doc in docs:
         s = ""
         for sentence in doc.sentences:
+            previous_ner = False
             for token in sentence.tokens:
                 if token.ner != "O":
-                    s += 'NNNN '
+                    if not previous_ner:
+                        s += 'NNNN '
+                        previous_ner = True
                 else:
                     s += token.text + ' '
+                    previous_ner = False
         ner_list.append(s)
 
     return ner_list
@@ -238,6 +259,26 @@ def create_tfidf(lines, tfidf_text_path):
     return lines_tfidf
 
 
+def create_first_sentence(lines, first_sentence_text_path):
+
+    lines_first_sentence = []
+    f = open(first_sentence_text_path + "/data_first_sentence.txt", 'w')
+
+    for line in lines:
+        idx = line.find(".")
+        if idx == -1:
+            lines_first_sentence.append(line)
+            f.write(line);
+        else:
+            lines_first_sentence.append(line[0:idx+1])
+            f.write(line[0:idx+1]);
+        f.write("\n");
+
+    f.close()
+
+    return lines_first_sentence
+
+
 def convert_html_to_text(html_path):
 
     f = open(html_path, 'r')
@@ -265,18 +306,23 @@ if __name__ == "__main__":
                         help='Output path of UPOS tagged text data') 
     parser.add_argument('--tfidf_path', default='./data/3/', metavar='N',
                         help='Output path of TFIDF tagged text data') 
+    parser.add_argument('--first_sentence_path', default='./data/4/', metavar='N',
+                        help='Output path of first sentence text data') 
     parser.add_argument('--skip_extraction', default=1, type=int, metavar='N',
                         help='Skip HTML extraction?') 
     parser.add_argument('--skip_upos', default=1, type=int, metavar='N',
                         help='Skip UPOS creation?') 
     parser.add_argument('--skip_tfidf', default=1, type=int, metavar='N',
                         help='Skip TF/IDF tagging?') 
+    parser.add_argument('--skip_first_sentence', default=1, type=int, metavar='N',
+                        help='Skip creating first sentence?') 
     args = parser.parse_args()
 
     debug = args.debug
     skip_extraction = args.skip_extraction
     skip_upos = args.skip_upos
     skip_tfidf = args.skip_tfidf
+    skip_first_sentence = args.skip_first_sentence
 
-    read_original_data(args.input_path, args.text_path, args.upos_path, args.tfidf_path)
+    read_original_data(args.input_path, args.text_path, args.upos_path, args.tfidf_path, args.first_sentence_path)
 
