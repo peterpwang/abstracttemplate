@@ -25,6 +25,7 @@ class Trainer():
         self.epochs = args.epochs
         self.batch_size = args.batch_size
         self.data_path = args.data_path
+        self.output_path = args.output_path;
 
         self.prepare_batch = None
         self.corpus = None
@@ -41,7 +42,6 @@ class Trainer():
         self.model_type = "LSTM"
         self.clip = 0.25
         self.log_interval = 200
-        self.save_path = "./data/9/save.mdl"
 
         # Set the random seed manually for reproducibility.
         torch.manual_seed(self.seed)
@@ -169,7 +169,7 @@ class Trainer():
             print('-' * 89)
             # Save the model if the validation loss is the best we've seen so far.
             if not best_val_loss or val_loss < best_val_loss:
-                with open(self.save_path, 'wb') as f:
+                with open(self.output_path + "/save.mdl", 'wb') as f:
                     torch.save(model, f)
                 best_val_loss = val_loss
             else:
@@ -177,7 +177,7 @@ class Trainer():
                 lr /= 4.0
 
         # Load the best saved model.
-        with open(self.save_path, 'rb') as f:
+        with open(self.output_path + "/save.mdl", 'rb') as f:
             model = torch.load(f)
             # after load the rnn params are not a continuous chunk of memory
             # this makes them a continuous chunk, and will speed up forward pass
@@ -196,10 +196,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', default=1, type=int, metavar='N',
                         help='number of total epochs to run (default 1)')
-    parser.add_argument('--batch_size', default=128, type=int, metavar='N',
-                        help='batch size (default 128)')
-    parser.add_argument('--data_path', default="./data/2/", type=str, metavar='N',
-                        help='data path (default ./data/2/)')
+    parser.add_argument('--batch_size', default=32, type=int, metavar='N',
+                        help='batch size (default 32)')
+    parser.add_argument('--data_path', default="./data/3/", type=str, metavar='N',
+                        help='data path (default ./data/3/)')
+    parser.add_argument('--ouput_path', default="./data/9/", type=str, metavar='N',
+                        help='output path (default ./data/9/)')
     args = parser.parse_args()
 
     net = Trainer(args)
