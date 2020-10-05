@@ -161,11 +161,15 @@ def create_upos(lines, upos_text_file, upos_html_file):
     f = open(upos_text_file, 'w')
     for doc in docs:
         for sentence in doc.sentences:
+            previous_ner = False
             for token in sentence.tokens:
                 if token.ner != "O":
-                    f.write('NNNN ')
+                    if not previous_ner:
+                        f.write('NNNN ')
+                        previous_ner = True
                 else:
                     f.write(token.text + ' ')
+                    previous_ner = False
         f.write("\n");
     f.close()
 
@@ -208,14 +212,17 @@ def create_tfidf(lines, tfidf_text_path):
         text = lines[doc]
         line = ""
 
+        previous_tfidf = False
         for w in text.split():
-            score = 0.0
             if w in tfidf_scores and tfidf_scores[w] > 0.05:
-                f.write("RRRR ");
-                line = line + "RRRR "
+                if not previous_tfidf:
+                    f.write("RRRR ");
+                    line = line + "RRRR "
+                    previous_tfidf = True
             else:
                 f.write(w + " ");
                 line = line + w + " "
+                previous_tfidf = False
 
         f.write("\n");
         lines_tfidf.append(line)
