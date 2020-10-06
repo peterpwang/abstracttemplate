@@ -7,26 +7,34 @@ Program files:
 
 html_process.py: Transfer HTML file to text files - train, validation, and test datasets.
 
-tfidf.py: Calculate TF-IDF from text file
+html_process.sh: Script to call html_process.py with parameters.
 
-stanza.py: Create UPOS from text file  
+train.py: Train on text files and save the model.
 
-train.sh, train.py: Train on text files and save the model.
+train.sh: Script to call train.py with parameters.
 
-generate.sh, generate.py: Generate text basing on the saved model.
+generate.py: Generate text basing on the saved model.
+
+generate.sh: Script to call generate.py with parameters.
 
 model.py: Model definitions.
 
 data.py: Data reading functions.
 
+util.py: Public functions.
+
 Data directories:
 -----------------
 
-data/origin: Original text in HTML formats.
+data/0: Original text in HTML formats.
 
-data/text_whole: Text created from HTML.
+data/1: Text extracted from HTML.
 
-data/text: First sentences of text.
+data/2: Text with UPOS tags.
 
-data/results: Saved models and generated text.
+data/3: Text with UPOS tags and TFIDF tags.
+
+data/4: First sentence text extracted from data/3.
+
+data/9: Saved models and generated text.
 
