@@ -200,7 +200,7 @@ if __name__ == "__main__":
                         help='batch size (default 32)')
     parser.add_argument('--data_path', default="./data/3/", type=str, metavar='N',
                         help='data path (default ./data/3/)')
-    parser.add_argument('--ouput_path', default="./data/9/", type=str, metavar='N',
+    parser.add_argument('--output_path', default="./data/9/", type=str, metavar='N',
                         help='output path (default ./data/9/)')
     args = parser.parse_args()
 
