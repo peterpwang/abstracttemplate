@@ -33,7 +33,7 @@ class Generator():
 
         self.seed = 1111
         self.log_interval = 200
-        self.words_per_sentence = 50
+        self.words_per_sentence = 10
         self.temperature = 1.0
 
         # Set the random seed manually for reproducibility.
