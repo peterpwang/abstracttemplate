@@ -18,6 +18,9 @@ skip_upos = 1
 skip_tfidf = 1
 skip_first_sentence = 1
 
+sentence_max_word_count = 75
+sentence_min_word_count = 6
+
 def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir, first_sentence_dir):
     global skip_extraction
     global skip_upos
@@ -67,9 +70,12 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
         print("Extracting first sentence...", flush=True)
         lines = create_first_sentence(lines, first_sentence_dir)
 
+        # Sort by word counts
+        lines = output_sorted_sentence_by_words_count(lines, first_sentence_dir)
+
         # Split and save text into text files
         text_split(lines, first_sentence_dir)
-        print(str(number_htmls) +  " first sentence text extracted.", flush=True)
+        print(str(len(lines)) +  " first sentence text extracted.", flush=True)
 
 
 def extract_text(html_data_dir, text_data_path):
@@ -125,6 +131,35 @@ def text_split(lines, text_path):
     for i in range(number_train + number_validation, number_lines):
         f.write(lines[i] + "\n");
     f.close()
+
+
+def sort_by_words_count(sentence):
+    line_words = sentence.split(" ")
+    return len(line_words)
+
+
+def output_sorted_sentence_by_words_count(lines, text_path):
+    global sentence_max_word_count
+    global sentence_min_word_count 
+
+    # Sort
+    lines_sorted = lines[:]
+    lines_sorted.sort(key=sort_by_words_count)
+
+    # Filter out sentencs too short or too long
+    lines_new = []
+    for i in range(0, len(lines_sorted)):
+        line_words = lines_sorted[i].split(" ")
+        if (len(line_words) <= sentence_max_word_count and len(line_words) >= sentence_min_word_count):
+            lines_new.append(lines_sorted[i])
+
+    # Write to a file
+    f = open(text_path + "/data_sorted_by_len.txt", 'w')
+    for i in range(0, len(lines_new)):
+        f.write(lines_new[i] + "\n");
+    f.close()
+
+    return lines_new
 
 
 def create_upos(lines, upos_text_file, upos_html_file):
