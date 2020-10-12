@@ -295,22 +295,32 @@ def create_tfidf(lines, tfidf_text_path):
 
 
 def create_first_sentence(lines, first_sentence_text_path):
+    global debug
 
+    # parse the text
+    nlp = stanza.Pipeline(lang='en', processors='tokenize')
+
+    docs = []
+    i = 0
+    for line in lines:
+        doc = nlp(line)
+        docs.append(doc)
+        i = i + 1
+        if debug == 1 and i%1000 == 0:
+            print(".", end = '', flush=True)
+
+    # Split the first sentence
     lines_first_sentence = []
     f = open(first_sentence_text_path + "/data_first_sentence.txt", 'w')
 
-    for line in lines:
-        idx = line.find(".")
-        if idx == -1:
-            lines_first_sentence.append(line)
-            f.write(line);
-        else:
-            lines_first_sentence.append(line[0:idx+1])
-            f.write(line[0:idx+1]);
-        f.write("\n");
+    for doc in docs:
+        for sentence in doc.sentences:
+            lines_first_sentence.append(sentence.text)
+            f.write(sentence.text)
+            f.write("\n")
+            break
 
     f.close()
-
     return lines_first_sentence
 
 
