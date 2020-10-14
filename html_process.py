@@ -17,23 +17,24 @@ debug = 0
 skip_extraction = 1
 skip_upos = 1
 skip_tfidf = 1
+skip_common_word = 1
 skip_first_sentence = 1
 
 sentence_max_word_count = 75
 sentence_min_word_count = 6
 
-def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir, first_sentence_dir):
+def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_dir, input_common_word_dir, common_word_dir, first_sentence_dir):
     global skip_extraction
     global skip_upos
     global skip_tfidf
+    global skip_common_word
     global skip_first_sentense
 
     if skip_extraction == 0:
         # Read text from html files and save into a list.
         print("Extracting...", flush=True)
         lines = extract_text(html_data_dir, text_data_dir)
-        number_htmls = len(lines)
-        print(str(number_htmls) +  " extracted.", flush=True)
+        print(str(len(lines)) +  " extracted.", flush=True)
 
         # Split and save text into text files
         text_split(lines, text_data_dir)
@@ -41,8 +42,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
     else:
         print("Reading...", flush=True)
         lines = read_text(text_data_dir + "/data.txt")
-        number_htmls = len(lines)
-        print(str(number_htmls) +  " read from dataset.", flush=True)
+        print(str(len(lines)) +  " read from dataset.", flush=True)
 
     if skip_upos == 0:
         print("Tagging...", flush=True)
@@ -51,7 +51,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
     else:
         print("UPOS tags reading...", flush=True)
         lines = read_text(upos_data_dir + "/data_upos.txt")
-        print(str(number_htmls) +  " UPOS tagged read from dataset.", flush=True)
+        print(str(len(lines)) +  " UPOS tagged read from dataset.", flush=True)
 
     # Create TFIDF text and split and save text into text files
     if skip_tfidf == 0:
@@ -60,11 +60,24 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
 
         # Split and save text into text files
         text_split(lines, tfidf_data_dir)
-        print(str(number_htmls) +  " TFIDF calculated.", flush=True)
+        print(str(len(lines)) +  " TFIDF calculated.", flush=True)
     else:
         print("TFIDF reading...", flush=True)
         lines = read_text(tfidf_data_dir + "/data_tfidf.txt")
-        print(str(number_htmls) +  " TFIDF read from dataset.", flush=True)
+        print(str(len(lines)) +  " TFIDF read from dataset.", flush=True)
+
+    # Create text contains only common words and split and save text into text files
+    if skip_common_word == 0:
+        print("Common word filtering...", flush=True)
+        lines = common_word_filter(lines, input_common_word_dir, common_word_dir)
+
+        # Split and save text into text files
+        text_split(lines, common_word_dir)
+        print(str(len(lines)) +  " Common word filtered.", flush=True)
+    else:
+        print("Common word result reading...", flush=True)
+        lines = read_text(common_word_dir + "/data_common_word.txt")
+        print(str(len(lines)) +  " Common word result read from dataset.", flush=True)
 
     # Create first sentence text and split and save text into text files
     if skip_first_sentence == 0:
@@ -295,6 +308,37 @@ def create_tfidf(lines, tfidf_text_path):
     return lines_tfidf
 
 
+def common_word_filter(lines, input_common_word_dir, output_common_word_dir):
+    # Read common words
+    common_word_list = read_text(input_common_word_dir + "/common_word.txt")
+    common_word_set = set(common_word_list)
+
+    # Filter out words not in common word list
+    lines_new = []
+    for i in range(0, len(lines)):
+        line_words = lines[i].split(" ")
+        line_new = ""
+        previous_rare_word = False
+        for word in line_words:
+            if (word in common_word_set or word in [',', '.', '?']):
+                line_new = line_new + " " + word
+                previous_rare_word = False
+            else:
+                if (not previous_rare_word):
+                    line_new = line_new + " CCCC"
+                previous_rare_word = True
+
+        lines_new.append(line_new)
+
+    # Write to a file
+    f = open(output_common_word_dir + "/data_common_word.txt", 'w')
+    for i in range(0, len(lines_new)):
+        f.write(lines_new[i] + "\n");
+    f.close()
+
+    return lines_new;
+
+
 def create_first_sentence(lines, first_sentence_text_path):
     global debug
 
@@ -357,14 +401,20 @@ if __name__ == "__main__":
                         help='Output path of UPOS tagged text data') 
     parser.add_argument('--tfidf_path', default='./data/3/', metavar='N',
                         help='Output path of TFIDF tagged text data') 
-    parser.add_argument('--first_sentence_path', default='./data/4/', metavar='N',
+    parser.add_argument('--common_word_path', default='./data/4/', metavar='N',
+                        help='Output path of common words only text data') 
+    parser.add_argument('--first_sentence_path', default='./data/5/', metavar='N',
                         help='Output path of first sentence text data') 
+    parser.add_argument('--input_common_word_path', default='./data/8/', metavar='N',
+                        help='Input path of common words data') 
     parser.add_argument('--skip_extraction', default=1, type=int, metavar='N',
                         help='Skip HTML extraction?') 
     parser.add_argument('--skip_upos', default=1, type=int, metavar='N',
                         help='Skip UPOS creation?') 
     parser.add_argument('--skip_tfidf', default=1, type=int, metavar='N',
                         help='Skip TF/IDF tagging?') 
+    parser.add_argument('--skip_common_word', default=1, type=int, metavar='N',
+                        help='Skip common words filtering') 
     parser.add_argument('--skip_first_sentence', default=1, type=int, metavar='N',
                         help='Skip creating first sentence?') 
     args = parser.parse_args()
@@ -373,7 +423,8 @@ if __name__ == "__main__":
     skip_extraction = args.skip_extraction
     skip_upos = args.skip_upos
     skip_tfidf = args.skip_tfidf
+    skip_common_word = args.skip_common_word
     skip_first_sentence = args.skip_first_sentence
 
-    read_original_data(args.input_path, args.text_path, args.upos_path, args.tfidf_path, args.first_sentence_path)
+    read_original_data(args.input_path, args.text_path, args.upos_path, args.tfidf_path, args.input_common_word_path, args.common_word_path, args.first_sentence_path)
 

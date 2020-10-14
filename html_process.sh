@@ -1,7 +1,7 @@
 #/bin/bash
 
 START_TIME=$SECONDS
-python3 html_process.py --debug=0 --input_path=./data/0/ --text_path=./data/1/ --upos_path=./data/2/ --tfidf_path=./data/3/ --first_sentence_path=./data/4/ --skip_extraction=1 --skip_upos=1 --skip_tfidf=1 --skip_first_sentence=1
+python3 html_process.py --debug=0 --input_path=./data/0/ --text_path=./data/1/ --upos_path=./data/2/ --tfidf_path=./data/3/ --input_common_word_path=./data/8/ --common_word_path=./data/4/ --first_sentence_path=./data/5/ --skip_extraction=1 --skip_upos=1 --skip_tfidf=1 --skip_common_word=1 --skip_first_sentence=1
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo " html_process.py took " $ELAPSED_TIME >> process_log.txt
 
