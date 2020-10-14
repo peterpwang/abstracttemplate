@@ -4,6 +4,7 @@ import argparse
 import sys
 import os
 import random
+import re
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -335,7 +336,12 @@ def convert_html_to_text(html_path):
     #text = soup.p.getText()
     idx1 = html.index("<p>") + 3
     idx2 = html.index("</p>")
-    return html[idx1:idx2]
+    s = html[idx1:idx2]
+
+    # Replace format tags in upper and lower cases: sup, bold, italic, super, i, em, sub
+    p = re.compile('(</?sup>|</?bold>|</?italic>|</?super>|</?i>|</?em>|</?sub>)')
+    s = p.sub('', s)
+    return s
 
 
 if __name__ == "__main__":
