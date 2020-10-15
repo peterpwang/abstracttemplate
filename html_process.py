@@ -147,9 +147,9 @@ def text_split(lines, text_path):
     f.close()
 
 
-def sort_by_words_count(sentence):
+def sort_by_wordscount_alphabetically(sentence):
     line_words = sentence.split(" ")
-    return len(line_words)
+    return "{:05d}".format(len(line_words)) + "." + sentence
 
 
 def output_sorted_sentence_by_words_count(lines, text_path):
@@ -158,7 +158,7 @@ def output_sorted_sentence_by_words_count(lines, text_path):
 
     # Sort
     lines_sorted = lines[:]
-    lines_sorted.sort(key=sort_by_words_count)
+    lines_sorted.sort(key=sort_by_wordscount_alphabetically)
 
     # Filter out sentencs too short or too long
     lines_new = []
