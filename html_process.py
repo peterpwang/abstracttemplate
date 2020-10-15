@@ -320,7 +320,7 @@ def common_word_filter(lines, input_common_word_dir, output_common_word_dir):
         line_new = ""
         previous_rare_word = False
         for word in line_words:
-            if (word in common_word_set or word in [',', '.', '?']):
+            if (word.lower() in common_word_set or word in [',', '.', '?']):
                 line_new = line_new + " " + word
                 previous_rare_word = False
             else:
