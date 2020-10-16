@@ -34,7 +34,11 @@ data/2: Text with UPOS tags.
 
 data/3: Text with UPOS tags and TFIDF tags.
 
-data/4: First sentence text extracted from data/3.
+data/4: Text from data/3 filtered by common words.
+
+data/5: First sentence text extracted from data/4.
+
+data/8: Common words directory.
 
 data/9: Saved models and generated text.
 
