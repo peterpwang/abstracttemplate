@@ -30,6 +30,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
     global skip_common_word
     global skip_first_sentense
 
+    # -----------------------
     if skip_extraction == 0:
         # Read text from html files and save into a list.
         print("Extracting...", flush=True)
@@ -44,6 +45,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
         lines = read_text(text_data_dir + "/data.txt")
         print(str(len(lines)) +  " read from dataset.", flush=True)
 
+    # -----------------------
     if skip_upos == 0:
         print("Tagging...", flush=True)
         lines = create_upos(lines, upos_data_dir + "/data_upos.txt", upos_data_dir + "/data_upos.html")
@@ -53,6 +55,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
         lines = read_text(upos_data_dir + "/data_upos.txt")
         print(str(len(lines)) +  " UPOS tagged read from dataset.", flush=True)
 
+    # -----------------------
     # Create TFIDF text and split and save text into text files
     if skip_tfidf == 0:
         print("TFIDF calculating...", flush=True)
@@ -66,6 +69,7 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
         lines = read_text(tfidf_data_dir + "/data_tfidf.txt")
         print(str(len(lines)) +  " TFIDF read from dataset.", flush=True)
 
+    # -----------------------
     # Create text contains only common words and split and save text into text files
     if skip_common_word == 0:
         print("Common word filtering...", flush=True)
@@ -79,13 +83,18 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
         lines = read_text(common_word_dir + "/data_common_word.txt")
         print(str(len(lines)) +  " Common word result read from dataset.", flush=True)
 
+    # -----------------------
     # Create first sentence text and split and save text into text files
     if skip_first_sentence == 0:
         print("Extracting first sentence...", flush=True)
         lines = create_first_sentence(lines, first_sentence_dir)
 
+        lines_with_origin = read_text(common_word_dir + "/data_common_word_origin.txt")
+        lines_with_origin = create_first_sentence(lines_with_origin, first_sentence_dir)
+
         # Sort by word counts
-        lines = output_sorted_sentence_by_words_count(lines, first_sentence_dir)
+        lines = output_sorted_sentence_by_words_count(lines, first_sentence_dir + "/data_sorted_by_len.txt")
+        lines_with_origin = output_sorted_sentence_by_words_count(lines_with_origin, first_sentence_dir + "/data_sorted_by_len_origin.txt")
 
         # Split and save text into text files
         text_split(lines, first_sentence_dir)
@@ -168,7 +177,7 @@ def output_sorted_sentence_by_words_count(lines, text_path):
             lines_new.append(lines_sorted[i])
 
     # Write to a file
-    f = open(text_path + "/data_sorted_by_len.txt", 'w')
+    f = open(text_path, 'w')
     for i in range(0, len(lines_new)):
         f.write(lines_new[i] + "\n");
     f.close()
@@ -223,47 +232,52 @@ def create_upos(lines, upos_text_file, upos_html_file):
     f.write("\n");
     f.close()
 
-    # Export documents into plain text
-    f = open(upos_text_file, 'w')
-    for doc in docs:
-        for sentence in doc.sentences:
-            previous_ner = False
-            for token in sentence.tokens:
-                if token.ner != "O":
-                    if not previous_ner:
-                        f.write('NNNN ')
-                        previous_ner = True
-                else:
-                    f.write(token.text + ' ')
-                    previous_ner = False
-        f.write("\n");
-    f.close()
-
-    # return in list
+    # Export documents into plain text and return in list
     ner_list = []
+    f = open(upos_text_file, 'w')
     for doc in docs:
         s = ""
         for sentence in doc.sentences:
             previous_ner = False
             for token in sentence.tokens:
                 if token.ner != "O":
-                    if not previous_ner:
-                        s += 'NNNN '
-                        previous_ner = True
+                    #if not previous_ner:
+                    f.write('NNNN[[[' + token.text + ']]] ')
+                    s += 'NNNN[[[' + token.text + ']]] '
+                    previous_ner = True
                 else:
+                    f.write(token.text + ' ')
                     s += token.text + ' '
                     previous_ner = False
+        f.write("\n");
         ner_list.append(s)
+    f.close()
 
     return ner_list
 
 
 def create_tfidf(lines, tfidf_text_path):
+
+    # Create a new text array with the original text removed
+    new_lines = []
+    for line in lines:
+        line_words = line.split(" ")
+        new_line = ""
+        for word in line_words:
+            idx1 = word.find("[[[")
+            idx2 = word.find("]]]")
+            if (idx1>0 and idx2>0):
+                new_word = word[0:idx1]
+            else:
+                new_word = word
+            new_line = new_line + word + " "
+        new_lines.append(new_line)
+
     # Calculate TFIDF
     vectorizer = TfidfVectorizer(stop_words='english', 
                                  #min_df=5, max_df=.5, 
                                  ngram_range=(1,1))
-    tfidf = vectorizer.fit_transform(lines)
+    tfidf = vectorizer.fit_transform(new_lines)
     #print(tfidf)
 
     # Get features and index
@@ -279,23 +293,31 @@ def create_tfidf(lines, tfidf_text_path):
         feature_index = tfidf[doc,:].nonzero()[1]
         tfidf_scores = dict(zip([features[x] for x in feature_index], [tfidf[doc, x] for x in feature_index]))
 
-        text = lines[doc]
-        line = ""
+        line_tfidf = ""
+        words_origin = line.split()
 
         previous_tfidf = False
-        for w in text.split():
+        i = 0
+        for w in words_origin:
+            # Get the original word
+            idx1 = words_origin[i].find("[[[")
+            idx2 = words_origin[i].find("]]]")
+            if (idx1>0 and idx2>0):
+                new_word = word[0:idx1]
+            
             if w in tfidf_scores and tfidf_scores[w] > 0.05:
                 if not previous_tfidf:
-                    f.write("RRRR ");
-                    line = line + "RRRR "
+                    f.write("RRRR(" + w + ") ");
+                    line_tfidf = line_tfidf + "RRRR(" + w + ") "
                     previous_tfidf = True
             else:
                 f.write(w + " ");
-                line = line + w + " "
+                line_tfidf = line_tfidf + w + " "
                 previous_tfidf = False
+            i = i + 1
 
         f.write("\n");
-        lines_tfidf.append(line)
+        lines_tfidf.append(line_tfidf)
 
         doc = doc + 1
 
@@ -315,25 +337,37 @@ def common_word_filter(lines, input_common_word_dir, output_common_word_dir):
 
     # Filter out words not in common word list
     lines_new = []
+    lines_new_with_origin = []
     for i in range(0, len(lines)):
         line_words = lines[i].split(" ")
         line_new = ""
+        line_new_with_origin = ""
         previous_rare_word = False
         for word in line_words:
             if (word.lower() in common_word_set or word in [',', '.', '?']):
                 line_new = line_new + " " + word
+                line_new_with_origin = line_new_with_origin + " " + word
                 previous_rare_word = False
             else:
                 if (not previous_rare_word):
                     line_new = line_new + " CCCC"
+                if (word != ""):
+                    line_new_with_origin = line_new_with_origin + " CCCC(" + word + ")"
                 previous_rare_word = True
 
         lines_new.append(line_new)
+        lines_new_with_origin.append(line_new_with_origin)
 
     # Write to a file
     f = open(output_common_word_dir + "/data_common_word.txt", 'w')
     for i in range(0, len(lines_new)):
         f.write(lines_new[i] + "\n");
+    f.close()
+
+    # Write to a file with origin
+    f = open(output_common_word_dir + "/data_common_word_origin.txt", 'w')
+    for i in range(0, len(lines_new_with_origin)):
+        f.write(lines_new_with_origin[i] + "\n");
     f.close()
 
     return lines_new;
