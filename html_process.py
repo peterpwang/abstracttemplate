@@ -256,28 +256,28 @@ def create_upos(lines, upos_text_file, upos_html_file):
     return ner_list
 
 
-def create_tfidf(lines, tfidf_text_path):
+def create_tfidf(lines_origin, tfidf_text_path):
 
     # Create a new text array with the original text removed
-    new_lines = []
-    for line in lines:
-        line_words = line.split(" ")
-        new_line = ""
-        for word in line_words:
-            idx1 = word.find("[[[")
-            idx2 = word.find("]]]")
+    lines = []
+    for line_origin in lines_origin:
+        words_origin = line_origin.split(" ")
+        line = ""
+        for word_origin in words_origin:
+            idx1 = word_origin.find("[[[")
+            idx2 = word_origin.find("]]]")
             if (idx1>0 and idx2>0):
-                new_word = word[0:idx1]
+                word = word_origin[0:idx1]
             else:
-                new_word = word
-            new_line = new_line + word + " "
-        new_lines.append(new_line)
+                word = word_origin  
+            line = line + word + " "
+        lines.append(line)
 
     # Calculate TFIDF
     vectorizer = TfidfVectorizer(stop_words='english', 
                                  #min_df=5, max_df=.5, 
                                  ngram_range=(1,1))
-    tfidf = vectorizer.fit_transform(new_lines)
+    tfidf = vectorizer.fit_transform(lines)
     #print(tfidf)
 
     # Get features and index
@@ -294,25 +294,28 @@ def create_tfidf(lines, tfidf_text_path):
         tfidf_scores = dict(zip([features[x] for x in feature_index], [tfidf[doc, x] for x in feature_index]))
 
         line_tfidf = ""
-        words_origin = line.split()
+        words = line.split()
+        words_origin = lines_origin[doc].split()
 
         previous_tfidf = False
         i = 0
-        for w in words_origin:
+        for w in words:
             # Get the original word
-            idx1 = words_origin[i].find("[[[")
-            idx2 = words_origin[i].find("]]]")
-            if (idx1>0 and idx2>0):
-                new_word = word[0:idx1]
+            word = words_origin[i]
             
             if w in tfidf_scores and tfidf_scores[w] > 0.05:
-                if not previous_tfidf:
-                    f.write("RRRR(" + w + ") ");
-                    line_tfidf = line_tfidf + "RRRR(" + w + ") "
-                    previous_tfidf = True
+                #if not previous_tfidf:
+                idx1 = words_origin[i].find("[[[")
+                idx2 = words_origin[i].find("]]]")
+                if (idx1>0 and idx2>0):
+                    word = words_origin[i][idx1+3:idx2]
+
+                f.write("RRRR[[[" + word + "]]] ");
+                line_tfidf = line_tfidf + "RRRR[[[" + word + "]]] "
+                previous_tfidf = True
             else:
-                f.write(w + " ");
-                line_tfidf = line_tfidf + w + " "
+                f.write(word + " ");
+                line_tfidf = line_tfidf + word + " "
                 previous_tfidf = False
             i = i + 1
 
