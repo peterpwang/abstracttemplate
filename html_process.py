@@ -263,13 +263,8 @@ def create_tfidf(lines_origin, tfidf_text_path):
     for line_origin in lines_origin:
         words_origin = line_origin.split(" ")
         line = ""
-        for word_origin in words_origin:
-            idx1 = word_origin.find("[[[")
-            idx2 = word_origin.find("]]]")
-            if (idx1>0 and idx2>0):
-                word = word_origin[0:idx1]
-            else:
-                word = word_origin  
+        for word_with_origin in words_origin:
+            word = get_symbol(word_with_origin)
             line = line + word + " "
         lines.append(line)
 
@@ -305,10 +300,7 @@ def create_tfidf(lines_origin, tfidf_text_path):
             
             if w in tfidf_scores and tfidf_scores[w] > 0.05:
                 #if not previous_tfidf:
-                idx1 = words_origin[i].find("[[[")
-                idx2 = words_origin[i].find("]]]")
-                if (idx1>0 and idx2>0):
-                    word = words_origin[i][idx1+3:idx2]
+                word = get_original(words_origin[i])
 
                 f.write("RRRR[[[" + word + "]]] ");
                 line_tfidf = line_tfidf + "RRRR[[[" + word + "]]] "
@@ -423,6 +415,26 @@ def convert_html_to_text(html_path):
     p = re.compile('(</?sup>|</?bold>|</?italic>|</?super>|</?i>|</?em>|</?sub>)')
     s = p.sub('', s)
     return s
+
+
+def get_symbol(word_with_origin):
+    idx1 = word_with_origin.find("[[[")
+    idx2 = word_with_origin.find("]]]")
+    if (idx1>0 and idx2>0):
+        word = word_with_origin[0:idx1]
+    else:
+        word = word_with_origin  
+    return word
+
+
+def get_original(word_with_origin):
+    idx1 = word_with_origin.find("[[[")
+    idx2 = word_with_origin.find("]]]")
+    if (idx1>0 and idx2>0):
+        word = word_with_origin[idx1+3:idx2]
+    else:
+        word = word_with_origin
+    return word
 
 
 if __name__ == "__main__":
