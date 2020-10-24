@@ -344,10 +344,10 @@ def common_word_filter(lines, input_common_word_dir, output_common_word_dir):
                 line_new_with_origin = line_new_with_origin + " " + word
                 previous_rare_word = False
             else:
-                if (not previous_rare_word):
-                    line_new = line_new + " CCCC"
+                #if (not previous_rare_word):
+                line_new = line_new + " CCCC"
                 if (word != ""):
-                    line_new_with_origin = line_new_with_origin + " CCCC(" + word + ")"
+                    line_new_with_origin = line_new_with_origin + " CCCC[[[" + get_original(word) + "]]]"
                 previous_rare_word = True
 
         lines_new.append(line_new)
