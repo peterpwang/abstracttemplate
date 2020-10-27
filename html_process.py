@@ -87,9 +87,12 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
     # Create first sentence text and split and save text into text files
     if skip_first_sentence == 0:
         print("Extracting first sentence...", flush=True)
-        lines = create_first_sentence(lines, first_sentence_dir, common_word_dir)
+        lines, lines_with_origin = create_first_sentence(lines, first_sentence_dir, common_word_dir)
+
         # Sort by word counts
         lines = output_sorted_sentence_by_words_count(lines, first_sentence_dir + "/data_sorted_by_len.txt")
+        # Sort by word counts
+        lines_with_origin = output_sorted_sentence_by_words_count(lines_with_origin, first_sentence_dir + "/data_sorted_by_len_origin.txt")
 
         # Split and save text into text files
         text_split(lines, first_sentence_dir)
@@ -378,33 +381,38 @@ def create_first_sentence(lines, first_sentence_text_path, common_word_dir):
         if debug == 1 and i%1000 == 0:
             print(".", end = '', flush=True)
 
-    # Split the first sentence
+    # Save first sentence
     lines_first_sentence = []
     f = open(first_sentence_text_path + "/data_first_sentence.txt", 'w')
-
     for doc in docs:
         for sentence in doc.sentences:
             lines_first_sentence.append(sentence.text)
             f.write(sentence.text)
             f.write("\n")
             break
-
     f.close()
+    #lines_first_sentence = read_text(first_sentence_text_path + "/data_first_sentence.txt")
 
-    # Create first sentence with origin
+    # Create first sentence with origin text
     lines_with_origin = read_text(common_word_dir + "/data_common_word_origin.txt")
     i = 0
     lines_first_sentence_with_origin = []
     for line in lines_first_sentence:
-        line_with_origin = lines_with_origin[i]
+        words_with_origin = lines_with_origin[i].split(" ")
+        sentence_with_origin = ""
         for j in range(len(line.split(" "))):
-           lines_first_sentence_with_origin.append(line_with_origin[j]) 
+           sentence_with_origin = sentence_with_origin + words_with_origin[j] + " "
+        lines_first_sentence_with_origin.append(sentence_with_origin) 
         i = i+1
 
-    # Sort by word counts
-    output_sorted_sentence_by_words_count(lines_first_sentence_with_origin, first_sentence_text_path + "/data_sorted_by_len_origin.txt")
+    # Save the first sentence with original text
+    f = open(first_sentence_text_path + "/data_first_sentence_origin.txt", 'w')
+    for line in lines_first_sentence_with_origin:
+        f.write(line)
+        f.write("\n")
+    f.close()
 
-    return lines_first_sentence
+    return lines_first_sentence, lines_first_sentence_with_origin
 
 
 def convert_html_to_text(html_path):
