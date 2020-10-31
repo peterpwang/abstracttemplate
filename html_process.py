@@ -57,17 +57,17 @@ def read_original_data(html_data_dir, text_data_dir, upos_data_dir, tfidf_data_d
 
     # -----------------------
     # Create TFIDF text and split and save text into text files
-    if skip_tfidf == 0:
-        print("TFIDF calculating...", flush=True)
-        lines = create_tfidf(lines, tfidf_data_dir)
-
-        # Split and save text into text files
-        text_split(lines, tfidf_data_dir)
-        print(str(len(lines)) +  " TFIDF calculated.", flush=True)
-    else:
-        print("TFIDF reading...", flush=True)
-        lines = read_text(tfidf_data_dir + "/data_tfidf.txt")
-        print(str(len(lines)) +  " TFIDF read from dataset.", flush=True)
+    #if skip_tfidf == 0:
+    #    print("TFIDF calculating...", flush=True)
+    #    lines = create_tfidf(lines, tfidf_data_dir)
+    #
+    #    # Split and save text into text files
+    #    text_split(lines, tfidf_data_dir)
+    #    print(str(len(lines)) +  " TFIDF calculated.", flush=True)
+    #else:
+    #    print("TFIDF reading...", flush=True)
+    #    lines = read_text(tfidf_data_dir + "/data_tfidf.txt")
+    #    print(str(len(lines)) +  " TFIDF read from dataset.", flush=True)
 
     # -----------------------
     # Create text contains only common words and split and save text into text files
@@ -338,15 +338,23 @@ def common_word_filter(lines, input_common_word_dir, output_common_word_dir):
         previous_rare_word = False
         for word in line_words:
             if (word.lower() in common_word_set or word in [',', '.', '?']):
-                line_new = line_new + " " + word
-                line_new_with_origin = line_new_with_origin + " " + word
+                if (line_new != ""):
+                    line_new = line_new + " "
+                line_new = line_new + word
+                if (line_new_with_origin != ""):
+                    line_new_with_origin = line_new_with_origin + " "
+                line_new_with_origin = line_new_with_origin + word
                 previous_rare_word = False
             else:
-                #if (not previous_rare_word):
-                line_new = line_new + " CCCC"
                 if (word != ""):
-                    line_new_with_origin = line_new_with_origin + " CCCC[[[" + get_original(word) + "]]]"
-                previous_rare_word = True
+                    #if (not previous_rare_word):
+                    if (line_new != ""):
+                        line_new = line_new + " "
+                    line_new = line_new + "CCCC"
+                    if (line_new_with_origin != ""):
+                        line_new_with_origin = line_new_with_origin + " "
+                    line_new_with_origin = line_new_with_origin + "CCCC[[[" + get_original(word) + "]]]"
+                    previous_rare_word = True
 
         lines_new.append(line_new)
         lines_new_with_origin.append(line_new_with_origin)
@@ -371,7 +379,7 @@ def create_first_sentence(lines, first_sentence_text_path, common_word_dir):
 
     # parse the text
     nlp = stanza.Pipeline(lang='en', processors='tokenize')
-
+    
     docs = []
     i = 0
     for line in lines:
@@ -380,7 +388,7 @@ def create_first_sentence(lines, first_sentence_text_path, common_word_dir):
         i = i + 1
         if debug == 1 and i%1000 == 0:
             print(".", end = '', flush=True)
-
+    
     # Save first sentence
     lines_first_sentence = []
     f = open(first_sentence_text_path + "/data_first_sentence.txt", 'w')
@@ -398,10 +406,14 @@ def create_first_sentence(lines, first_sentence_text_path, common_word_dir):
     i = 0
     lines_first_sentence_with_origin = []
     for line in lines_first_sentence:
+        words = line.split(" ");
         words_with_origin = lines_with_origin[i].split(" ")
         sentence_with_origin = ""
-        for j in range(len(line.split(" "))):
-           sentence_with_origin = sentence_with_origin + words_with_origin[j] + " "
+        for j in range(len(words)):
+            #print("<<<" + words[j] + "<<<" + words_with_origin[j] + "\n");
+            if (sentence_with_origin != ""):
+                sentence_with_origin = sentence_with_origin + " "
+            sentence_with_origin = sentence_with_origin + words_with_origin[j]
         lines_first_sentence_with_origin.append(sentence_with_origin) 
         i = i+1
 
