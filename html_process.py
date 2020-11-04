@@ -424,6 +424,23 @@ def create_first_sentence(lines, first_sentence_text_path, common_word_dir):
         f.write("\n")
     f.close()
 
+    # Count the initial words 
+    initial_words = []
+    for line in lines_first_sentence_with_origin:
+        words = line.split(" ");
+        initial_words.append(words[0].capitalize())
+
+    unique_initial_words = dict()
+    for word in initial_words:
+        unique_initial_words[word] = unique_initial_words.get(word, 0) + 1
+
+    # Save the initial words
+    f = open(first_sentence_text_path + "/data_initial_words.txt", 'w')
+    for word, count in sorted(unique_initial_words.items(), key=lambda kv: kv[1], reverse=True):
+        f.write(word + "," + str(count))
+        f.write("\n")
+    f.close()
+
     return lines_first_sentence, lines_first_sentence_with_origin
 
 
