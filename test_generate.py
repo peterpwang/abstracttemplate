@@ -136,7 +136,7 @@ def main():
         raise KeyError("the model {} you specified is not supported. You are welcome to add it and open a PR :)")
 
     # Load model
-    tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path)
+    tokenizer = tokenizer_class.from_pretrained("gpt2") #args.model_name_or_path)
     model = model_class.from_pretrained(args.model_name_or_path)
     model.to(args.device)
 
