@@ -134,22 +134,21 @@ def text_split(lines, text_path):
 
     random.shuffle(lines)
 
-    number_train = int(number_lines * 0.7)
-    number_validation = int(number_lines * 0.2)
-    number_test = number_lines - number_train - number_validation
+    number_train = int(number_lines * 0.8)
+    number_test = number_lines - number_train
 
     f = open(text_path + "/train.txt", 'w')
     for i in range(0, number_train):
         f.write(lines[i] + "\n");
     f.close()
 
-    f = open(text_path + "/validation.txt", 'w')
-    for i in range(number_train, number_train + number_validation):
-        f.write(lines[i] + "\n");
-    f.close()
+    #f = open(text_path + "/validation.txt", 'w')
+    #for i in range(number_train, number_train + number_validation):
+    #    f.write(lines[i] + "\n");
+    #f.close()
 
     f = open(text_path + "/test.txt", 'w')
-    for i in range(number_train + number_validation, number_lines):
+    for i in range(number_train, number_lines):
         f.write(lines[i] + "\n");
     f.close()
 
