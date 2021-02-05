@@ -5,7 +5,7 @@ The project will investigate ways to extract language patterns (keywords, common
 Program files:
 -------------------
 
-html_process.py: Transfer HTML file to text files - train, validation, and test datasets.
+html_process.py: Transfer HTML file to text files - train and test datasets.
 
 html_process.sh: Script to call html_process.py with parameters.
 
