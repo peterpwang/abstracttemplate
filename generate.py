@@ -34,7 +34,7 @@ from transformers import (
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.INFO,
+    level=logging.ERROR,
 )
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ def main():
         # Accept initial prompt
         prompt_text = rlinput("Model prompt >>> ", prompt_text)
 
-        prefix = args.prefix if args.prefix else args.padding_text
+        prefix = args.prefix if args.prefix else ''
         encoded_prompt = tokenizer.encode(prefix + prompt_text, add_special_tokens=False, return_tensors="pt")
         encoded_prompt = encoded_prompt.to(args.device)
 
@@ -192,6 +192,7 @@ def main():
 
             # Add the prompt at the beginning of the sequence. Remove the excess text that was used for pre-processing
             generated_text = text[len(tokenizer.decode(encoded_prompt[0], clean_up_tokenization_spaces=True)) :]
+            generated_text = generated_text.replace("<|endoftext|>","") 
             total_sequence = (
                 prompt_text + generated_text
             )
@@ -199,11 +200,11 @@ def main():
             generated_sequences.append(total_sequence)
             print("..." + generated_text)
 
-        option_string = input("Select number:")
-        if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
-            prompt_text = generated_sequences[int(option_string)-1]
-        else:
-            break
+        while(True):
+            option_string = input("Select number:")
+            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
+                prompt_text = generated_sequences[int(option_string)-1]
+                break
 
     # End of while(True)
 
