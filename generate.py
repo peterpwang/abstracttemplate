@@ -25,6 +25,8 @@ import readline
 import numpy as np
 import torch
 
+import stanza
+
 from transformers import (
     GPT2LMHeadModel,
     GPT2Tokenizer
@@ -43,6 +45,9 @@ MAX_LENGTH = int(10000)  # Hardcoded max length to avoid infinite loop
 MODEL_CLASSES = {
     "gpt2": (GPT2LMHeadModel, GPT2Tokenizer)
 }
+
+#stanza.download('en')
+nlp = stanza.Pipeline(lang='en', processors='tokenize,ner')
 
 def set_seed(args):
     np.random.seed(args.seed)
@@ -193,6 +198,10 @@ def main():
             # Add the prompt at the beginning of the sequence. Remove the excess text that was used for pre-processing
             generated_text = text[len(tokenizer.decode(encoded_prompt[0], clean_up_tokenization_spaces=True)) :]
             generated_text = generated_text.replace("<|endoftext|>","") 
+
+            # Tag NER except that it is in the prompt text
+            generated_text = create_upos(generated_text, prompt_text)
+
             total_sequence = (
                 prompt_text + generated_text
             )
@@ -209,6 +218,24 @@ def main():
     # End of while(True)
 
     return generated_sequences
+
+
+def create_upos(line, prompt_text):
+
+    # Export documents into plain text and return in list
+    doc = nlp(line)
+    s = ""
+    for sentence in doc.sentences:
+        previous_ner = False
+        for token in sentence.tokens:
+            if token.ner != "O" and token.text not in prompt_text:
+                #if not previous_ner:
+                s += '<UNK>[[[' + token.text + ']]] '
+                previous_ner = True
+            else:
+                s += token.text + ' '
+                previous_ner = False
+    return s
 
 
 if __name__ == "__main__":
