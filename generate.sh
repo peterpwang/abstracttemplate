@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 -W ignore ./generate.py  --model_type=gpt2 --model_name_or_path=./data/9/gpt2-theses/checkpoint-423200 --num_return_sequences=5
+python3 ./generate.py -B science --cond_text "This thesis" --length 50 --gamma 1.5 --num_iterations 3 --num_samples 10 --stepsize 0.03 --window_length 5 --kl_scale 0.01 --gm_scale 0.99 --colorama --sample --verbosity regular --pretrained_model "/home/pw90/code/abstracttemplate/data/9/gpt2-theses/checkpoint-423200" 

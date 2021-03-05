@@ -18,6 +18,7 @@
 """
 
 
+import sys
 import argparse
 import logging
 import readline
@@ -26,6 +27,9 @@ import numpy as np
 import torch
 
 import stanza
+
+sys.path.insert(0, './pplm')
+import generate_pplm
 
 from transformers import (
     GPT2LMHeadModel,
@@ -77,61 +81,99 @@ def adjust_length_to_model(length, max_sequence_length):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model_type",
-        default=None,
+        "--pretrained_model",
+        "-M",
         type=str,
-        required=True,
-        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
+        default="gpt2-medium",
+        help="pretrained model name or path to local checkpoint",
     )
     parser.add_argument(
-        "--model_name_or_path",
-        default=None,
+        "--cond_text", type=str, default="The lake",
+        help="Prefix texts to condition on"
+    )
+    parser.add_argument(
+        "--uncond", action="store_true",
+        help="Generate from end-of-text as prefix"
+    )
+    parser.add_argument(
+        "--num_samples",
+        type=int,
+        default=1,
+        help="Number of samples to generate from the modified latents",
+    )
+    parser.add_argument(
+        "--bag_of_words",
+        "-B",
         type=str,
-        required=True,
-        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
-    )
-
-    parser.add_argument("--prompt", type=str, default="")
-    parser.add_argument("--length", type=int, default=20)
-    parser.add_argument("--stop_token", type=str, default=None, help="Token at which text generation is stopped")
-
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=1.0,
-        help="temperature of 1.0 has no effect, lower tend toward greedy sampling",
+        default=None,
+        help="Bags of words used for PPLM-BoW. "
+             "Either a BOW id (see list in code) or a filepath. "
+             "Multiple BoWs separated by ;",
     )
     parser.add_argument(
-        "--repetition_penalty", type=float, default=1.0, help="primarily useful for CTRL model; in that case, use 1.2"
+        "--discrim",
+        "-D",
+        type=str,
+        default=None,
+        choices=("clickbait", "sentiment", "toxicity", "generic"),
+        help="Discriminator to use",
     )
-    parser.add_argument("--k", type=int, default=0)
-    parser.add_argument("--p", type=float, default=0.9)
+    parser.add_argument('--discrim_weights', type=str, default=None,
+                        help='Weights for the generic discriminator')
+    parser.add_argument('--discrim_meta', type=str, default=None,
+                        help='Meta information for the generic discriminator')
+    parser.add_argument(
+        "--class_label",
+        type=int,
+        default=-1,
+        help="Class label used for the discriminator",
+    )
+    parser.add_argument("--length", type=int, default=100)
+    parser.add_argument("--stepsize", type=float, default=0.02)
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--top_k", type=int, default=10)
+    parser.add_argument(
+        "--sample", action="store_true",
+        help="Generate from end-of-text as prefix"
+    )
+    parser.add_argument("--num_iterations", type=int, default=3)
+    parser.add_argument("--grad_length", type=int, default=10000)
+    parser.add_argument(
+        "--window_length",
+        type=int,
+        default=0,
+        help="Length of past which is being optimized; "
+             "0 corresponds to infinite window length",
+    )
+    parser.add_argument(
+        "--horizon_length",
+        type=int,
+        default=1,
+        help="Length of future to optimize over",
+    )
+    parser.add_argument("--decay", action="store_true",
+                        help="whether to decay or not")
+    parser.add_argument("--gamma", type=float, default=1.5)
+    parser.add_argument("--gm_scale", type=float, default=0.9)
+    parser.add_argument("--kl_scale", type=float, default=0.01)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--no_cuda", action="store_true", help="no cuda")
+    parser.add_argument("--colorama", action="store_true",
+                        help="colors keywords")
+    parser.add_argument("--verbosity", type=str, default="very_verbose",
+                        choices=(
+                            "quiet", "regular", "verbose", "very_verbose"),
+                        help="verbosiry level")
+
+    args = parser.parse_args()
+    generated_text = generate_pplm.run_pplm_example(**vars(args))
+    print("Output: ", generated_text)
+
+"""
+    parser = argparse.ArgumentParser()
 
     parser.add_argument("--prefix", type=str, default="", help="Text added prior to input.")
     parser.add_argument("--padding_text", type=str, default="", help="Deprecated, the use of `--prefix` is preferred.")
-    parser.add_argument("--xlm_language", type=str, default="", help="Optional language when used with the XLM model.")
-
-    parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
-    parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
-    parser.add_argument("--num_return_sequences", type=int, default=1, help="The number of samples to generate.")
-    parser.add_argument(
-        "--fp16",
-        action="store_true",
-        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit",
-    )
-    args = parser.parse_args()
-
-    args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-    args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
-
-    logger.warning(
-        "device: %s, n_gpu: %s, 16-bits training: %s",
-        args.device,
-        args.n_gpu,
-        args.fp16,
-    )
-
-    set_seed(args)
 
     # Initialize the model and tokenizer
     try:
@@ -218,6 +260,7 @@ def main():
     # End of while(True)
 
     return generated_sequences
+"""
 
 
 def create_upos(line, prompt_text):
