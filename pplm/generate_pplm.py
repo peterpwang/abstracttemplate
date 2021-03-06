@@ -22,9 +22,7 @@ Example command with discriminator:
 python examples/run_pplm.py -D sentiment --class_label 3 --cond_text "The lake" --length 10 --gamma 1.0 --num_iterations 30 --num_samples 10 --stepsize 0.01 --kl_scale 0.01 --gm_scale 0.95
 """
 
-# This is copied from run_pplm.py. The changes include:
-# * Return generated text in function run_pplm_example. 
-# * Use tokenizer of GPT2-medium
+# This is copied from run_pplm.py. The changes include: Suppress output of generated text
 
 import argparse
 import json
@@ -659,8 +657,8 @@ def generate_text_pplm(
             last if output_so_far is None
             else torch.cat((output_so_far, last), dim=1)
         )
-        if verbosity_level >= REGULAR:
-            print(tokenizer.decode(output_so_far.tolist()[0]))
+        #if verbosity_level >= REGULAR:
+        #    print(tokenizer.decode(output_so_far.tolist()[0]))
 
     return output_so_far, unpert_discrim_loss, loss_in_time
 
@@ -739,7 +737,7 @@ def run_pplm_example(
     model.eval()
 
     # load tokenizer
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2-medium") ##pretrained_model)
+    tokenizer = GPT2Tokenizer.from_pretrained(pretrained_model)
 
     # Freeze GPT-2 weights
     for param in model.parameters():
@@ -846,7 +844,7 @@ def run_pplm_example(
             (tokenized_cond_text, pert_gen_tok_text, unpert_gen_tok_text)
         )
 
-    return pert_gen_text
+    return
 
 
 if __name__ == '__main__':

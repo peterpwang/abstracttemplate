@@ -53,11 +53,10 @@ MODEL_CLASSES = {
 #stanza.download('en')
 nlp = stanza.Pipeline(lang='en', processors='tokenize,ner')
 
-def set_seed(args):
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
+
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def rlinput(prompt, prefill=''):
@@ -166,64 +165,11 @@ def main():
                         help="verbosiry level")
 
     args = parser.parse_args()
-    generated_text = generate_pplm.run_pplm_example(**vars(args))
-    print("Output: ", generated_text)
+
+    # Generate
+    run_pplm(**vars(args))
 
 """
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--prefix", type=str, default="", help="Text added prior to input.")
-    parser.add_argument("--padding_text", type=str, default="", help="Deprecated, the use of `--prefix` is preferred.")
-
-    # Initialize the model and tokenizer
-    try:
-        args.model_type = args.model_type.lower()
-        model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
-    except KeyError:
-        raise KeyError("the model {} you specified is not supported. You are welcome to add it and open a PR :)")
-
-    # Load model
-    tokenizer = tokenizer_class.from_pretrained("gpt2") #args.model_name_or_path)
-    model = model_class.from_pretrained(args.model_name_or_path)
-    model.to(args.device)
-
-    if args.fp16:
-        model.half()
-
-    args.length = adjust_length_to_model(args.length, max_sequence_length=model.config.max_position_embeddings)
-    logger.info(args)
-
-    prompt_text = args.prompt if args.prompt else ''
-
-    while(True):
-        # Accept initial prompt
-        prompt_text = rlinput("Model prompt >>> ", prompt_text)
-
-        prefix = args.prefix if args.prefix else ''
-        encoded_prompt = tokenizer.encode(prefix + prompt_text, add_special_tokens=False, return_tensors="pt")
-        encoded_prompt = encoded_prompt.to(args.device)
-
-        if encoded_prompt.size()[-1] == 0:
-            input_ids = None
-        else:
-            input_ids = encoded_prompt
-
-        # Generate
-        output_sequences = model.generate(
-            input_ids=input_ids,
-            max_length=args.length + len(encoded_prompt[0]),
-            temperature=args.temperature,
-            top_k=args.k,
-            top_p=args.p,
-            repetition_penalty=args.repetition_penalty,
-            do_sample=True,
-            num_return_sequences=args.num_return_sequences,
-        )
-
-        # Remove the batch dimension when returning multiple sequences
-        if len(output_sequences.shape) > 2:
-            output_sequences.squeeze_()
-
         generated_sequences = []
 
         # Print out generated text
@@ -261,6 +207,173 @@ def main():
 
     return generated_sequences
 """
+
+
+def run_pplm(
+        pretrained_model="gpt2-medium",
+        cond_text="",
+        uncond=False,
+        num_samples=1,
+        bag_of_words=None,
+        discrim=None,
+        discrim_weights=None,
+        discrim_meta=None,
+        class_label=-1,
+        length=100,
+        stepsize=0.02,
+        temperature=1.0,
+        top_k=10,
+        sample=True,
+        num_iterations=3,
+        grad_length=10000,
+        horizon_length=1,
+        window_length=0,
+        decay=False,
+        gamma=1.5,
+        gm_scale=0.9,
+        kl_scale=0.01,
+        seed=0,
+        no_cuda=False,
+        colorama=False,
+        verbosity='regular'
+):
+    set_seed(seed)
+
+    device = "cuda" if torch.cuda.is_available() and not no_cuda else "cpu"
+
+    if discrim == 'generic':
+        set_generic_model_params(discrim_weights, discrim_meta)
+
+    if discrim is not None:
+        discriminator_pretrained_model = DISCRIMINATOR_MODELS_PARAMS[discrim][
+            "pretrained_model"
+        ]
+        if pretrained_model != discriminator_pretrained_model:
+            pretrained_model = discriminator_pretrained_model
+            print("discrim = {}, pretrained_model set "
+            "to discriminator's = {}".format(discrim, pretrained_model))
+
+    # Initialize the model and tokenizer
+    model = GPT2LMHeadModel.from_pretrained(
+        pretrained_model,
+        output_hidden_states=True
+    )
+    model.to(device)
+    model.eval()
+
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2-medium") ##pretrained_model)
+
+    # Freeze GPT-2 weights
+    for param in model.parameters():
+        param.requires_grad = False
+
+    prompt_text = cond_text if cond_text else ''
+
+    while(True):
+        # Accept initial prompt
+        prompt_text = rlinput("Model prompt >>> ", prompt_text)
+
+        # figure out conditioning text
+        if uncond:
+            tokenized_cond_text = tokenizer.encode(
+                [tokenizer.bos_token],
+                add_special_tokens=False
+            )
+        else:
+            tokenized_cond_text = tokenizer.encode(
+                tokenizer.bos_token + prompt_text,
+                add_special_tokens=False
+            )
+
+        # generate unperturbed and perturbed texts
+
+        # full_text_generation returns:
+        # unpert_gen_tok_text, pert_gen_tok_texts, discrim_losses, losses_in_time
+        unpert_gen_tok_text, pert_gen_tok_texts, _, _ = generate_pplm.full_text_generation(
+            model=model,
+            tokenizer=tokenizer,
+            context=tokenized_cond_text,
+            device=device,
+            num_samples=num_samples,
+            bag_of_words=bag_of_words,
+            discrim=discrim,
+            class_label=class_label,
+            length=length,
+            stepsize=stepsize,
+            temperature=temperature,
+            top_k=top_k,
+            sample=sample,
+            num_iterations=num_iterations,
+            grad_length=grad_length,
+            horizon_length=horizon_length,
+            window_length=window_length,
+            decay=decay,
+            gamma=gamma,
+            gm_scale=gm_scale,
+            kl_scale=kl_scale
+        )
+
+        # untokenize unperturbed text
+        #unpert_gen_text = tokenizer.decode(unpert_gen_tok_text.tolist()[0])
+        #
+        #print("=" * 80)
+        #print("= Unperturbed generated text =")
+        #print(unpert_gen_text)
+        #print()
+
+        generated_texts = []
+
+        bow_word_ids = set()
+        if bag_of_words and colorama:
+            bow_indices = generate_pplm.get_bag_of_words_indices(bag_of_words.split(";"),
+                                               tokenizer)
+            for single_bow_list in bow_indices:
+                # filtering all words in the list composed of more than 1 token
+                filtered = list(filter(lambda x: len(x) <= 1, single_bow_list))
+                # w[0] because we are sure w has only 1 item because previous fitler
+                bow_word_ids.update(w[0] for w in filtered)
+
+        # iterate through the perturbed texts
+        generated_sequences = []
+        for i, pert_gen_tok_text in enumerate(pert_gen_tok_texts):
+            try:
+                # untokenize unperturbed text
+                if colorama:
+                    import colorama
+
+                    pert_gen_text = ''
+                    for word_id in pert_gen_tok_text.tolist()[0]:
+                        if word_id in bow_word_ids:
+                            pert_gen_text += '{}{}{}'.format(
+                                colorama.Fore.RED,
+                                tokenizer.decode([word_id]),
+                                colorama.Style.RESET_ALL
+                            )
+                        else:
+                            pert_gen_text += tokenizer.decode([word_id])
+                else:
+                    pert_gen_text = tokenizer.decode(pert_gen_tok_text.tolist()[0])
+
+                print("=== GENERATED TEXT {} ===".format(i + 1))
+                generated_text = pert_gen_text.replace("<|endoftext|>","") 
+                print("..." + generated_text)
+                generated_text = create_upos(generated_text, prompt_text)
+                generated_sequences.append(generated_text)
+                #print()
+            except:
+                pass
+
+            # keep the prefix, perturbed seq, original seq for each index
+            generated_texts.append(
+                (tokenized_cond_text, pert_gen_tok_text, unpert_gen_tok_text)
+            )
+
+        while(True):
+            option_string = input("Select number:")
+            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
+                prompt_text = generated_sequences[int(option_string)-1]
+                break
+    # End of while(True)
 
 
 def create_upos(line, prompt_text):
