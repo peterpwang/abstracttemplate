@@ -271,6 +271,7 @@ def run_pplm(
 
     while(True):
         # Accept initial prompt
+        print()
         prompt_text = rlinput("Model prompt >>> ", prompt_text)
 
         # figure out conditioning text
@@ -368,6 +369,7 @@ def run_pplm(
                 (tokenized_cond_text, pert_gen_tok_text, unpert_gen_tok_text)
             )
 
+        print("=" * 80)
         while(True):
             option_string = input("Select number:")
             if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
