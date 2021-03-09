@@ -170,42 +170,8 @@ def main():
     run_pplm(**vars(args))
 
 """
-        generated_sequences = []
-
-        # Print out generated text
-        for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
-            print("=== GENERATED SEQUENCE {} === ".format(generated_sequence_idx + 1), end='')
-            generated_sequence = generated_sequence.tolist()
-
-            # Decode text
-            text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True)
-
             # Remove all text after the stop token
             text = text[: text.find(args.stop_token) if args.stop_token else None]
-
-            # Add the prompt at the beginning of the sequence. Remove the excess text that was used for pre-processing
-            generated_text = text[len(tokenizer.decode(encoded_prompt[0], clean_up_tokenization_spaces=True)) :]
-            generated_text = generated_text.replace("<|endoftext|>","") 
-
-            # Tag NER except that it is in the prompt text
-            generated_text = create_upos(generated_text, prompt_text)
-
-            total_sequence = (
-                prompt_text + generated_text
-            )
-
-            generated_sequences.append(total_sequence)
-            print("..." + generated_text)
-
-        while(True):
-            option_string = input("Select number:")
-            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
-                prompt_text = generated_sequences[int(option_string)-1]
-                break
-
-    # End of while(True)
-
-    return generated_sequences
 """
 
 
@@ -357,6 +323,7 @@ def run_pplm(
 
                 print("=== GENERATED TEXT {} ===".format(i + 1))
                 generated_text = pert_gen_text.replace("<|endoftext|>","") 
+                #generated_text = remove_uncompleted_sentence(generated_text)
                 print("..." + generated_text)
                 generated_text = create_upos(generated_text, prompt_text)
                 generated_sequences.append(generated_text)
@@ -372,7 +339,7 @@ def run_pplm(
         print("=" * 80)
         while(True):
             option_string = input("Select number:")
-            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<len(generated_sequences)):
+            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<=len(generated_sequences)):
                 prompt_text = generated_sequences[int(option_string)-1]
                 break
     # End of while(True)
@@ -388,12 +355,24 @@ def create_upos(line, prompt_text):
         for token in sentence.tokens:
             if token.ner != "O" and token.text not in prompt_text:
                 #if not previous_ner:
-                s += '<UNK>[[[' + token.text + ']]] '
+                s += '<UNK> ' ##[[[' + token.text + ']]] '
                 previous_ner = True
             else:
                 s += token.text + ' '
                 previous_ner = False
     return s
+
+
+def remove_uncompleted_sentence(line):
+
+    text = ""
+    doc = nlp(line)
+    if len(doc.sentences) == 1:
+        text = doc.sentences[0].text
+    else:
+        for i in range(len(doc.sentences)-1):
+            text = text + doc.sentences[i].text
+    return text
 
 
 if __name__ == "__main__":
