@@ -1,20 +1,4 @@
-#!/usr/bin/env python3
-# coding=utf-8
-# Copyright 2018 Google AI, Google Brain and Carnegie Mellon University Authors and the HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-""" Conditional text generation with the auto-regressive models of GPT-2
+""" Conditional text generation with the auto-regressive models of GPT-2 and PPLM
 """
 
 
@@ -75,6 +59,36 @@ def adjust_length_to_model(length, max_sequence_length):
     elif length < 0:
         length = MAX_LENGTH  # avoid infinite loop
     return length
+
+
+def create_upos(line, prompt_text):
+
+    # Export documents into plain text and return in list
+    doc = nlp(line)
+    s = ""
+    for sentence in doc.sentences:
+        previous_ner = False
+        for token in sentence.tokens:
+            if token.ner != "O" and token.text not in prompt_text:
+                #if not previous_ner:
+                s += '<UNK> ' ##[[[' + token.text + ']]] '
+                previous_ner = True
+            else:
+                s += token.text + ' '
+                previous_ner = False
+    return s
+
+
+def remove_uncompleted_sentence(line):
+
+    text = ""
+    doc = nlp(line)
+    if len(doc.sentences) == 1:
+        text = doc.sentences[0].text
+    else:
+        for i in range(len(doc.sentences)-1):
+            text = text + doc.sentences[i].text
+    return text
 
 
 def main():
@@ -343,36 +357,6 @@ def run_pplm(
                 prompt_text = generated_sequences[int(option_string)-1]
                 break
     # End of while(True)
-
-
-def create_upos(line, prompt_text):
-
-    # Export documents into plain text and return in list
-    doc = nlp(line)
-    s = ""
-    for sentence in doc.sentences:
-        previous_ner = False
-        for token in sentence.tokens:
-            if token.ner != "O" and token.text not in prompt_text:
-                #if not previous_ner:
-                s += '<UNK> ' ##[[[' + token.text + ']]] '
-                previous_ner = True
-            else:
-                s += token.text + ' '
-                previous_ner = False
-    return s
-
-
-def remove_uncompleted_sentence(line):
-
-    text = ""
-    doc = nlp(line)
-    if len(doc.sentences) == 1:
-        text = doc.sentences[0].text
-    else:
-        for i in range(len(doc.sentences)-1):
-            text = text + doc.sentences[i].text
-    return text
 
 
 if __name__ == "__main__":
