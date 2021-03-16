@@ -250,10 +250,6 @@ def run_pplm(
     prompt_text = cond_text if cond_text else ''
 
     while(True):
-        # Accept initial prompt
-        print()
-        prompt_text = rlinput("Model prompt >>> ", prompt_text)
-
         # figure out conditioning text
         if uncond:
             tokenized_cond_text = tokenizer.encode(
@@ -261,6 +257,10 @@ def run_pplm(
                 add_special_tokens=False
             )
         else:
+            # Accept initial prompt
+            print()
+            prompt_text = rlinput("Model prompt >>> ", prompt_text)
+
             tokenized_cond_text = tokenizer.encode(
                 tokenizer.bos_token + prompt_text,
                 add_special_tokens=False
@@ -350,12 +350,15 @@ def run_pplm(
                 (tokenized_cond_text, pert_gen_tok_text, unpert_gen_tok_text)
             )
 
-        print("=" * 80)
-        while(True):
-            option_string = input("Select number:")
-            if (option_string.isdigit() and int(option_string)>0 and int(option_string)<=len(generated_sequences)):
-                prompt_text = generated_sequences[int(option_string)-1]
-                break
+        if uncond:
+            break
+        else:
+            print("=" * 80)
+            while(True):
+                option_string = input("Select number:")
+                if (option_string.isdigit() and int(option_string)>0 and int(option_string)<=len(generated_sequences)):
+                    prompt_text = generated_sequences[int(option_string)-1]
+                    break
     # End of while(True)
 
 
