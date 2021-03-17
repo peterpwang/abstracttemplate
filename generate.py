@@ -69,12 +69,15 @@ def create_upos(line, prompt_text):
     for sentence in doc.sentences:
         previous_ner = False
         for token in sentence.tokens:
+            if token.text == ")" or token.text == "(":
+                continue
+
             if token.ner != "O" and token.text not in prompt_text:
-                #if not previous_ner:
-                s += '<UNK> ' ##[[[' + token.text + ']]] '
+                if not previous_ner:
+                    s += "( ) " # + "[[[" + token.text + "]]] "
                 previous_ner = True
             else:
-                s += token.text + ' '
+                s += token.text + " "
                 previous_ner = False
     return s
 
@@ -338,8 +341,8 @@ def run_pplm(
                 print("=== GENERATED TEXT {} ===".format(i + 1))
                 generated_text = pert_gen_text.replace("<|endoftext|>","") 
                 #generated_text = remove_uncompleted_sentence(generated_text)
-                print("..." + generated_text)
                 generated_text = create_upos(generated_text, prompt_text)
+                print("..." + generated_text)
                 generated_sequences.append(generated_text)
                 #print()
             except:
