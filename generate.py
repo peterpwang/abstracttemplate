@@ -11,6 +11,8 @@ import numpy as np
 import torch
 
 import stanza
+import nltk
+nltk.download('punkt')
 
 sys.path.insert(0, './pplm')
 import generate_pplm
@@ -91,6 +93,34 @@ def remove_uncompleted_sentence(line):
     return text
 
 
+def unigram(tokens):    
+    model = {}
+    for f in tokens:
+        if f in model:
+            model[f] += 1
+        else:
+            model[f] = 1
+    N = float(sum(model.values()))
+    for word in model:
+        model[word] = model[word]/N
+    return model
+
+
+def calculate_perplexity(text):
+    tokens = nltk.word_tokenize(text)
+    model = unigram(tokens)
+
+    perplexity = 1
+    N = 0
+
+    for word in tokens:
+        if word in model:
+            N += 1
+            perplexity = perplexity * (1/model[word])
+    perplexity = pow(perplexity, 1/float(N))
+    return perplexity
+
+    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -281,6 +311,19 @@ def run_pplm(
             gm_scale=gm_scale,
             kl_scale=kl_scale
         )
+
+        # iterate through the perturbed texts
+        for i, pert_gen_tok_text in enumerate(pert_gen_tok_texts):
+            # untokenize unperturbed text
+            pert_gen_text = tokenizer.decode(pert_gen_tok_text.tolist()[0])
+
+            print("=== GENERATED TEXT {} ===".format(i + 1))
+            generated_text = pert_gen_text.replace("<|endoftext|>","") 
+            #generated_text = remove_uncompleted_sentence(generated_text)
+            print(generated_text)
+
+            print("(Perplexity="+str(calculate_perplexity(generated_text))+")")
+
     else:
         while(True):
             # Accept initial prompt
