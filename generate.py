@@ -107,7 +107,7 @@ def unigram(tokens):
 
 
 def calculate_perplexity(text):
-    tokens = nltk.word_tokenize(text)
+    tokens = nltk.word_tokenize(text.lower())
     model = unigram(tokens)
 
     perplexity = 1
@@ -117,7 +117,7 @@ def calculate_perplexity(text):
         if word in model:
             N += 1
             perplexity = perplexity * (1/model[word])
-    perplexity = pow(perplexity, 1/float(N))
+    perplexity = np.power(perplexity, 1/float(N))
     return perplexity
 
     
@@ -323,7 +323,7 @@ def run_pplm(
             print(generated_text)
 
             print("(Perplexity="+str(calculate_perplexity(generated_text))+")")
-
+    # End of Unconditional 
     else:
         while(True):
             # Accept initial prompt
