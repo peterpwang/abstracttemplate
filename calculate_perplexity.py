@@ -10,18 +10,51 @@ nltk.download('punkt')
 from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 
+import numpy as np
+
 from util import read_text
 
+def unigram(tokens):    
+    model = {}
+    for f in tokens:
+        if f in model:
+            model[f] += 1
+        else:
+            model[f] = 1
+    N = float(sum(model.values()))
+    for word in model:
+        model[word] = model[word]/N
+    return model
 
 def calculate_perplexity(text):
+    tokens = nltk.word_tokenize(text.lower())
+    model = unigram(tokens)
 
-    train, vocab = padded_everygram_pipeline(2, text)
-    lm = MLE(2)
-    lm.fit(train, vocab)
+    perplexity = 0
+    N = 0
 
-    perplexity = (0, lm.perplexity(text), 0)
+    for word in tokens:
+        if word in model:
+            N += 1
+            perplexity = perplexity + np.log2(model[word])
+    perplexity = np.power(-perplexity/N, 2)
     return perplexity
 
+def calculate_perplexity_nltk(lines):
+
+    tokenized_text = [list(map(str.lower, nltk.tokenize.word_tokenize(sent))) 
+                for sent in lines]
+
+    n = 2
+    train, vocab = padded_everygram_pipeline(n, tokenized_text)
+    lm = MLE(n)
+    lm.fit(train, vocab)
+
+    test, _ = padded_everygram_pipeline(n, tokenized_text)
+    perplexities = []
+    for i, line in enumerate(test):
+        perplexities.append(lm.perplexity(line))
+    return perplexities
     
 def main():
     parser = argparse.ArgumentParser()
@@ -37,10 +70,15 @@ def main():
 
     # Read text
     lines = read_text(args.input)
-    print(lines)
-    perplexity = calculate_perplexity(lines)
 
-    print("Perplexity: ngram-1="+str(perplexity[0])+",  ngram-2="+str(perplexity[1])+",  ngram-3="+str(perplexity[2]))
+    perplexities = calculate_perplexity_nltk(lines)
+    for x in perplexities:
+        print("PP(NLTK 2-gram):{0}".format(x))
+
+    for text in lines:
+        perplexity = calculate_perplexity(text)
+        print("PP:{0}".format(perplexity))
+
 
 if __name__ == "__main__":
     main()

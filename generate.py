@@ -260,7 +260,7 @@ def run_pplm(
         # generate unperturbed and perturbed texts
         # full_text_generation returns:
         # unpert_gen_tok_text, pert_gen_tok_texts, discrim_losses, losses_in_time
-        unpert_gen_tok_text, pert_gen_tok_texts, _, _ = generate_pplm.full_text_generation(
+        unpert_gen_tok_text, pert_gen_tok_texts, discrim_loss, loss_in_time = generate_pplm.full_text_generation(
             model=model,
             tokenizer=tokenizer,
             context=tokenized_cond_text,
@@ -283,6 +283,8 @@ def run_pplm(
             gm_scale=gm_scale,
             kl_scale=kl_scale
         )
+
+        print("Loss: " + str(discrim_loss) + " " + str(loss_in_time) + "\n")
 
         # iterate through the perturbed texts
         for i, pert_gen_tok_text in enumerate(pert_gen_tok_texts):
