@@ -89,6 +89,8 @@ def remove_uncompleted_sentence(line):
         text = doc.sentences[0].text
     else:
         for i in range(len(doc.sentences)-1):
+            if (len(text) > 0): 
+                text = text + " "
             text = text + doc.sentences[i].text
     return text
 
@@ -284,7 +286,7 @@ def run_pplm(
             kl_scale=kl_scale
         )
 
-        print("Loss: " + str(discrim_loss) + " " + str(loss_in_time) + "\n")
+        #print("Loss: " + str(discrim_loss) + " " + str(loss_in_time) + "\n")
 
         # iterate through the perturbed texts
         for i, pert_gen_tok_text in enumerate(pert_gen_tok_texts):
@@ -293,7 +295,7 @@ def run_pplm(
 
             # Each generated text is a line
             generated_text = pert_gen_text.replace("<|endoftext|>","") 
-            #generated_text = remove_uncompleted_sentence(generated_text)
+            generated_text = remove_uncompleted_sentence(generated_text)
             print(generated_text)
     # End of Unconditional 
     else:
@@ -351,7 +353,7 @@ def run_pplm(
 
                     print("=== GENERATED TEXT {} ===".format(i + 1))
                     generated_text = pert_gen_text.replace("<|endoftext|>","") 
-                    #generated_text = remove_uncompleted_sentence(generated_text)
+                    generated_text = remove_uncompleted_sentence(generated_text)
                     generated_text = create_upos(generated_text, prompt_text)
                     print(generated_text)
                     generated_sequences.append(generated_text)
