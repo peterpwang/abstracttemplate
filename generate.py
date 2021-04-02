@@ -105,7 +105,7 @@ def main():
         help="pretrained model name or path to local checkpoint",
     )
     parser.add_argument(
-        "--cond_text", type=str, default="The lake",
+        "--cond_text", type=str, default="This thesis",
         help="Prefix texts to condition on"
     )
     parser.add_argument(
