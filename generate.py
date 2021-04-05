@@ -71,11 +71,15 @@ def create_upos(line, prompt_text):
     for sentence in doc.sentences:
         previous_ner = False
         for token in sentence.tokens:
-            if token.ner != "O" and token.text not in prompt_text:
+            #NLP has a bug that the left parenthesis is I-LAW while the correspondent right paranthesis is O
+            if (token.ner != "O" or (token.ner == "O" and token.text == ")" and previous_ner)) and token.text not in prompt_text:
                 if not previous_ner:
-                    s += "[[[" + token.text + "]]] "
+                    s += "[[[ "
+                s += token.text + " "
                 previous_ner = True
             else:
+                if previous_ner:
+                    s += "]]] "
                 s += token.text + " "
                 previous_ner = False
     return s
