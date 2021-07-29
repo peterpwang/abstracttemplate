@@ -290,8 +290,6 @@ def run_pplm(
             kl_scale=kl_scale
         )
 
-        #print("Loss: " + str(discrim_loss) + " " + str(loss_in_time) + "\n")
-
         # iterate through the perturbed texts
         for i, pert_gen_tok_text in enumerate(pert_gen_tok_texts):
             # untokenize unperturbed text
@@ -300,7 +298,14 @@ def run_pplm(
             # Each generated text is a line
             generated_text = pert_gen_text.replace("<|endoftext|>","") 
             generated_text = remove_uncompleted_sentence(generated_text)
-            print(generated_text)
+            #print(generated_text)
+
+            loss2 = loss_in_time[i]
+            loss3 = loss2[len(loss2)-1]
+            loss4 = loss3[0]
+            print("Loss: " + str(len(discrim_loss)) + " " + str(len(loss2)) + " " + str(loss4))
+            print(str(len(generated_text))+",")
+        print("\n")
     # End of Unconditional 
     else:
         while(True):
